@@ -3,6 +3,8 @@ import PricingSectionDemo from "@/components/pricing-demo";
 import { HowItWorks } from "@/components/how-it-works";
 import { AuthModal } from "@/components/auth-modal";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-white font-[family-name:var(--font-geist-sans)]">

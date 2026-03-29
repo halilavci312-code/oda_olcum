@@ -1,20 +1,11 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useRef, useState, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import {
-  Loader2,
-  Upload,
-  ZoomIn,
-  RotateCcw,
-  Zap,
-  CheckCircle2,
-  Home,
-  LogOut,
-  RefreshCw,
-  ArrowLeft,
-} from "lucide-react";
+import { Loader as Loader2, Upload, ZoomIn, RotateCcw, Zap, CircleCheck as CheckCircle2, Hop as Home, LogOut, RefreshCw, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_URL = "http://187.124.14.208:8001/olc";
@@ -60,7 +51,7 @@ export default function DashboardPage() {
 
   // Auth check
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSupabase().auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         window.location.href = "/";
       } else {
@@ -322,7 +313,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <span className="text-gray-500 text-[13px]">{user?.email}</span>
             <button
-              onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
+              onClick={async () => { await getSupabase().auth.signOut(); window.location.href = "/"; }}
               className="px-4 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all text-[13px] font-medium flex items-center gap-2"
             >
               <LogOut className="w-3.5 h-3.5" /> Çıkış Yap

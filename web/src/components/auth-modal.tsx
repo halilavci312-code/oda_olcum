@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
-import { Loader2, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { getSupabase } from "@/lib/supabase";
+import { Loader as Loader2, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function AuthModal({ children }: { children?: React.ReactNode }) {
@@ -22,7 +22,7 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
   const [hasSession, setHasSession] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSupabase().auth.getSession().then(({ data: { session } }) => {
       if (session) setHasSession(true);
     });
   }, []);
@@ -36,7 +36,7 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
     setError(""); setSuccess(""); setLoading(true);
 
     if (isForgotPassword) {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + "/reset-password",
       });
       if (error) setError(error.message);
@@ -46,7 +46,7 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
     }
 
     if (isLogin) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
       if (error) {
         setError(error.message === "Invalid login credentials" ? "E-posta veya şifre hatalı." : error.message);
       } else if (data.session) {
@@ -55,7 +55,7 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
       }
     } else {
       if (password.length < 6) { setError("Şifre en az 6 karakter olmalıdır."); setLoading(false); return; }
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await getSupabase().auth.signUp({
         email, password,
         options: { data: { full_name: name } },
       });
