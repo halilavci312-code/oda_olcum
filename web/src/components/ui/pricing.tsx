@@ -267,15 +267,18 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
 
           <div className="mt-auto pt-8 w-full flex justify-center">
             {plan.isPopular ? (
-              <StarButton className="w-full text-[14px] font-semibold h-11 pointer-events-auto">
+              <Link
+                href={plan.href}
+                className="w-full flex items-center justify-center rounded-full bg-black text-white text-[14px] font-semibold h-11 transition-all hover:bg-neutral-800 hover:scale-[1.02] active:scale-[0.98] shadow-md z-20 relative"
+              >
                 {plan.buttonText}
-              </StarButton>
+              </Link>
             ) : (
               <Link
                 href={plan.href}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "w-full rounded-2xl text-[14px] font-semibold h-11 transition-all z-20 relative",
+                  "w-full rounded-full text-[14px] font-semibold h-11 transition-all z-20 relative",
                   "bg-transparent border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 )}
               >
