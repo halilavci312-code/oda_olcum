@@ -15,6 +15,7 @@ import NumberFlow from "@number-flow/react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GlowCard } from "@/components/spotlight-card";
+import { StarButton } from "@/components/star-button";
 
 // --- UTILITY FUNCTIONS ---
 
@@ -264,20 +265,23 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
             ))}
           </ul>
 
-          <div className="mt-auto pt-8">
-            <Link
-              href={plan.href}
-              className={cn(
-                buttonVariants({ variant: plan.isPopular ? "default" : "outline", size: "lg" }),
-                "w-full rounded-xl text-[14px] font-semibold h-11 transition-all z-20 relative",
-                plan.isPopular
-                  ? "text-white border-0 hover:shadow-md"
-                  : "bg-transparent border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-              style={plan.isPopular ? { background: "linear-gradient(135deg, #6366f1, #4f46e5)" } : {}}
-            >
-              {plan.buttonText}
-            </Link>
+          <div className="mt-auto pt-8 w-full flex justify-center">
+            {plan.isPopular ? (
+              <StarButton className="w-full text-[14px] font-semibold h-11 pointer-events-auto">
+                {plan.buttonText}
+              </StarButton>
+            ) : (
+              <Link
+                href={plan.href}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "w-full rounded-2xl text-[14px] font-semibold h-11 transition-all z-20 relative",
+                  "bg-transparent border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                )}
+              >
+                {plan.buttonText}
+              </Link>
+            )}
           </div>
         </div>
       </GlowCard>

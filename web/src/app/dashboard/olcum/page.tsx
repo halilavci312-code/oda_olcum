@@ -19,6 +19,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { StarButton } from "@/components/star-button";
 
 const API_URL = "http://187.124.14.208:8001/olc";
 const ZOOM = 3;
@@ -356,12 +357,9 @@ export default function OlcumPage() {
                   </div>
                   <h3 className="text-xl font-semibold mb-2 text-gray-900 tracking-[-0.01em]">Fotoğraf Yükle</h3>
                   <p className="text-gray-500 text-[14px] font-light mb-8">Sürükleyip bırakın veya seçmek için tıklayın (JPG, PNG)</p>
-                  <span
-                    className="text-white font-semibold py-3 px-8 rounded-full text-[14px] inline-block transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
-                    style={{ background: "linear-gradient(135deg, #111111, #333333)" }}
-                  >
-                    Görsel Seç
-                  </span>
+                  <div className="pointer-events-none">
+                    <StarButton className="scale-110 pointer-events-auto hover:scale-105 active:scale-95 transition-all text-[15px] font-bold">Görsel Seç</StarButton>
+                  </div>
                 </div>
               </section>
 
@@ -468,18 +466,22 @@ export default function OlcumPage() {
                   >
                     <RotateCcw className="w-3.5 h-3.5" /> Temizle
                   </button>
-                  <button
-                    disabled={points.length !== 4}
-                    onClick={handleCalculate}
-                    className={`px-5 py-2 rounded-xl font-semibold text-[13px] flex items-center gap-2 transition-all ${
-                      points.length === 4
-                        ? "text-white hover:scale-[1.03] active:scale-[0.97]"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                    }`}
-                    style={points.length === 4 ? { background: "linear-gradient(135deg, #111111, #333333)" } : {}}
-                  >
-                    <Zap className="w-3.5 h-3.5" /> Hesapla
-                  </button>
+                  {points.length === 4 ? (
+                    <StarButton
+                      disabled={false}
+                      onClick={handleCalculate}
+                      className="px-6 scale-[1.05] flex items-center gap-2"
+                    >
+                      <Zap className="w-4 h-4" /> Hesapla
+                    </StarButton>
+                  ) : (
+                    <button
+                      disabled
+                      className="px-5 py-2 rounded-xl font-semibold text-[13px] flex items-center gap-2 transition-all bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    >
+                      <Zap className="w-3.5 h-3.5" /> Hesapla
+                    </button>
+                  )}
                 </div>
               </div>
 

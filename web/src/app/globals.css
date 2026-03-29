@@ -47,6 +47,15 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   --color-destructive-foreground: var(--destructive-foreground);
+  --animate-star-btn: star-btn calc(var(--duration)*1s) linear infinite;
+  @keyframes star-btn {
+  0% {
+    offset-distance: 0%;
+    }
+  100% {
+    offset-distance: 100%;
+    }
+  }
 }
 
 :root {
