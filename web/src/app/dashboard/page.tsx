@@ -17,10 +17,10 @@ export default function DashboardOverviewPage() {
           <h1 className="text-3xl font-bold text-gray-900 tracking-[-0.02em]">Ana Panel</h1>
           <p className="text-gray-500 mt-1">Tekrar hoş geldiniz, ölçümlerinize ve planınıza buradan göz atın.</p>
         </div>
-        <button className="hidden sm:flex px-5 py-2.5 rounded-xl font-semibold text-[14px] items-center gap-2 text-white shadow-sm transition-all hover:scale-[1.03] active:scale-[0.97]"
+        <Link href="/#fiyatlandirma" className="hidden sm:flex px-5 py-2.5 rounded-xl font-semibold text-[14px] items-center gap-2 text-white shadow-sm transition-all hover:scale-[1.03] active:scale-[0.97]"
                 style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
           <Crown className="w-4 h-4" /> Pro'ya Yükselt
-        </button>
+        </Link>
       </motion.div>
 
       {/* Metrics Row */}
@@ -130,9 +130,9 @@ export default function DashboardOverviewPage() {
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 tracking-[-0.01em]">Son Ölçümler</h2>
-          <button className="text-[13px] font-medium text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-1 group">
+          <Link href="/dashboard/olcum" className="text-[13px] font-medium text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-1 group">
             Tümünü Gör <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           <div className="p-12 text-center flex flex-col items-center justify-center">
