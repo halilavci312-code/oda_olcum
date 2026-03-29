@@ -3,14 +3,20 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { Loader2, Home, BarChart2, Crop, Settings, LogOut, ArrowUpRight } from "lucide-react";
+import { Loader2, Home, BarChart2, Crop, Settings, LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -91,20 +97,84 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-y-auto w-full">
+      <main className="flex-1 min-w-0 overflow-y-auto w-full relative">
         {/* Mobile Header */}
-        <div className="md:hidden bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div className="md:hidden bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>
               <Home className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="font-semibold text-[15px] text-gray-900 tracking-[-0.02em]">AkıllıÖlçüm</span>
           </Link>
-          <button onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}>
-            <LogOut className="w-5 h-5 text-gray-600" />
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-1 text-gray-600 hover:text-gray-900 focus:outline-none"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
         
+        {/* Mobile Slide-over Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-50 flex">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            {/* Panel */}
+            <div className="relative w-72 max-w-[calc(100%-3rem)] bg-white h-full flex flex-col shadow-xl">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+                <Link href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>
+                    <Home className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-semibold text-[16px] text-gray-900 tracking-[-0.02em]">AkıllıÖlçüm</span>
+                </Link>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-gray-500 hover:text-gray-800">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto px-4 py-6 gap-2 flex flex-col">
+                {menuItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-[15px] font-medium ${
+                        isActive
+                          ? "bg-indigo-50 text-indigo-700 font-semibold"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      <item.icon className={`w-5 h-5 ${isActive ? "text-indigo-600" : "text-gray-400"}`} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="p-4 border-t border-gray-100 flex-shrink-0">
+                <div className="px-3 py-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col gap-2 mb-4">
+                  <span className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">Hesabım</span>
+                  <span className="text-[13px] text-gray-900 truncate" title={user?.email || ""}>
+                    {user?.email}
+                  </span>
+                </div>
+                <button
+                  onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all text-[14px] font-medium flex items-center justify-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" /> Çıkış Yap
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="p-6 md:p-10 max-w-7xl mx-auto">
           {children}
         </div>

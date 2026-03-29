@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "Yapay zeka ile fotoğraftan duvar ve mobilya ölçülerini çıkarın.",
 };
 
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,6 +23,7 @@ export default function RootLayout({
     <html lang="tr" className="dark">
       <body className={`${inter.variable} antialiased bg-slate-950 text-slate-50`}>
         {children}
+        <Toaster position="bottom-right" richColors />
       </body>
     </html>
   );

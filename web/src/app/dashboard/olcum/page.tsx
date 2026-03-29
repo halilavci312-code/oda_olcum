@@ -19,7 +19,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { StarButton } from "@/components/star-button";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
 
 const API_URL = "http://187.124.14.208:8001/olc";
 const ZOOM = 3;
@@ -38,12 +40,22 @@ interface MeasurementResult {
   guven_skoru: "yuksek" | "orta" | "dusuk";
 }
 
+interface DBMeasurement {
+  id: string;
+  wall_width_cm: number;
+  wall_height_cm: number;
+  reference_type: string;
+  created_at: string;
+}
+
 export default function OlcumPage() {
   const [step, setStep] = useState<Step>("upload");
   const [points, setPoints] = useState<Point[]>([]);
   const [magnifierEnabled, setMagnifierEnabled] = useState(false);
   const [result, setResult] = useState<MeasurementResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [history, setHistory] = useState<DBMeasurement[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +72,31 @@ export default function OlcumPage() {
     pointsRef.current = points;
   }, [points]);
 
+  const loadHistory = useCallback(async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from("measurements")
+        .select("id, wall_width_cm, wall_height_cm, reference_type, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+        
+      if (!error && data) {
+        setHistory(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   // ── Canvas drawing ──────────────────────────────────────────────────────────
   const redrawCanvas = useCallback(() => {
@@ -257,9 +294,32 @@ export default function OlcumPage() {
       if (!res.ok) throw new Error(data.hata || data.cozum || "Bilinmeyen hata");
       setResult(data);
       setStep("result");
+      
+      // Save to Supabase
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      if (user) {
+        const { error } = await supabase.from("measurements").insert({
+          user_id: user.id,
+          wall_width_cm: data.duvar_genislik_cm,
+          wall_height_cm: data.duvar_yukseklik_cm,
+          wall_width_m: data.duvar_genislik_m,
+          wall_height_m: data.duvar_yukseklik_m,
+          confidence_score: data.guven_skoru,
+          reference_type: data.referans,
+          algorithm_details: data.aciklama,
+        });
+        if (!error) {
+          toast.success("Ölçüm başarıyla kaydedildi");
+          loadHistory(); // refresh history
+        } else {
+          toast.error("Ölçüm veritabanına kaydedilemedi");
+        }
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Bilinmeyen hata";
       setApiError(message);
+      toast.error(message);
       // Re-show canvas: re-trigger setup
       needsSetup.current = true;
       setStep("canvas");
@@ -398,15 +458,47 @@ export default function OlcumPage() {
                 <div className="flex items-center justify-between mb-4 px-2">
                   <h2 className="text-xl font-bold text-gray-900 tracking-[-0.01em]">Geçmiş Ölçümlerim</h2>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="p-12 text-center flex flex-col items-center justify-center">
-                    <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                       <Clock className="w-6 h-6 text-gray-400" />
-                    </div>
-                    <h3 className="text-gray-900 font-semibold mb-1 tracking-[-0.01em]">Henüz ölçüm geçmişiniz yok</h3>
-                    <p className="text-gray-500 text-[14px]">Sisteme yüklediğiniz ve tamamlanan başarılı ölçümleriniz burada listelenir.</p>
+                
+                {historyLoading ? (
+                  <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm p-12 flex justify-center">
+                    <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                   </div>
-                </div>
+                ) : history.length === 0 ? (
+                  <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="p-12 text-center flex flex-col items-center justify-center">
+                      <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+                         <Clock className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <h3 className="text-gray-900 font-semibold mb-1 tracking-[-0.01em]">Henüz ölçüm geçmişiniz yok</h3>
+                      <p className="text-gray-500 text-[14px]">Sisteme yüklediğiniz ve tamamlanan başarılı ölçümleriniz burada listelenir.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {history.map((item) => (
+                      <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-sm transition-all flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div className="text-[12px] font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100 uppercase tracking-wider">
+                            {item.reference_type === "aruco" ? "ArUco" : "A4"}
+                          </div>
+                          <span className="text-[12px] text-gray-400">
+                            {format(new Date(item.created_at), "d MMM yyyy", { locale: tr })}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-2">
+                          <div>
+                            <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-1">Genişlik</p>
+                            <p className="text-xl font-semibold text-gray-900">{item.wall_width_cm}<span className="text-sm font-normal text-gray-500 ml-1">cm</span></p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-1">Yükseklik</p>
+                            <p className="text-xl font-semibold text-gray-900">{item.wall_height_cm}<span className="text-sm font-normal text-gray-500 ml-1">cm</span></p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
             </motion.div>

@@ -25,6 +25,17 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
     getSupabase().auth.getSession().then(({ data: { session } }) => {
       if (session) setHasSession(true);
     });
+
+    const checkHash = () => {
+      if (window.location.hash === "#login") {
+        setIsOpen(true);
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    };
+    
+    checkHash();
+    window.addEventListener("hashchange", checkHash);
+    return () => window.removeEventListener("hashchange", checkHash);
   }, []);
 
   const handleReset = () => {

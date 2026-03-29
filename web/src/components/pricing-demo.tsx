@@ -14,7 +14,7 @@ const demoPlans = [
     ],
     description: "Sistemi test etmek isteyen bireysel kullanıcılar için.",
     buttonText: "Hemen Başla",
-    href: "#",
+    href: "#login",
   },
   {
     name: "Pro",
@@ -29,7 +29,7 @@ const demoPlans = [
     ],
     description: "İç mimarlar ve e-ticaret satıcıları için ideal çözümler.",
     buttonText: "Pro'ya Geç",
-    href: "#",
+    href: "#login",
     isPopular: true,
   },
   {
@@ -45,7 +45,7 @@ const demoPlans = [
     ],
     description: "Kendi uygulamasında bu sistemi kullanmak isteyen şirketlere.",
     buttonText: "Bizimle İletişime Geçin",
-    href: "#",
+    href: "#login",
   },
 ];
 
