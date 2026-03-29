@@ -290,18 +290,18 @@ export default function DashboardPage() {
   };
 
   const confColors = {
-    yuksek: { badge: "bg-emerald-500/20 text-emerald-400", glow: "bg-emerald-500/20" },
-    orta:   { badge: "bg-yellow-500/20 text-yellow-400",  glow: "bg-yellow-500/20"  },
-    dusuk:  { badge: "bg-red-500/20 text-red-400",        glow: "bg-red-500/20"     },
+    yuksek: { badge: "bg-emerald-500/10 text-emerald-600", glow: "bg-emerald-500/20" },
+    orta:   { badge: "bg-yellow-500/10 text-yellow-600",  glow: "bg-yellow-500/20"  },
+    dusuk:  { badge: "bg-red-500/10 text-red-600",        glow: "bg-red-500/20"     },
   };
 
   // ── Auth loading screen ─────────────────────────────────────────────
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#030712] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mx-auto mb-4" />
-          <p className="text-white/30 text-[14px]">Oturum kontrol ediliyor...</p>
+          <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 text-[14px]">Oturum kontrol ediliyor...</p>
         </div>
       </div>
     );
@@ -309,27 +309,27 @@ export default function DashboardPage() {
 
   // ── Main render ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#030712] text-white font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>
               <Home className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-[15px] text-white tracking-[-0.02em]">AkıllıÖlçüm</span>
+            <span className="font-semibold text-[15px] text-gray-900 tracking-[-0.02em]">AkıllıÖlçüm</span>
           </a>
           <div className="flex items-center gap-4">
-            <span className="text-white/30 text-[13px]">{user?.email}</span>
+            <span className="text-gray-500 text-[13px]">{user?.email}</span>
             <button
               onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
-              className="px-4 py-1.5 rounded-lg border border-white/[0.08] text-white/50 hover:bg-white/[0.05] hover:text-white/80 transition-all text-[13px] font-medium flex items-center gap-2"
+              className="px-4 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all text-[13px] font-medium flex items-center gap-2"
             >
               <LogOut className="w-3.5 h-3.5" /> Çıkış Yap
             </button>
           </div>
         </div>
-        <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+        <div className="h-px bg-gray-200" />
       </nav>
 
       <main className="container mx-auto px-4 py-12 pt-28 max-w-4xl">
@@ -339,7 +339,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm text-[13px] font-medium text-white/50 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 bg-white shadow-sm text-[13px] font-medium text-gray-600 mb-6"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
             Ölçüm Paneli
@@ -348,7 +348,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-5xl font-bold tracking-[-0.03em] mb-4 text-white"
+            className="text-4xl md:text-5xl font-bold tracking-[-0.03em] mb-4 text-gray-900"
           >
             Akıllı <span className="shimmer-text">Ölçüm</span> Sistemi
           </motion.h1>
@@ -356,7 +356,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-white/35 text-lg max-w-2xl mx-auto font-light"
+            className="text-gray-500 text-lg max-w-2xl mx-auto font-light"
           >
             Fotoğrafınızı yükleyin, duvarın 4 köşesini seçin ve yapay zeka santimetre milimetresine kadar ölçsün.
           </motion.p>
@@ -371,7 +371,7 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
-              className="relative overflow-hidden rounded-2xl p-8 mb-8 text-center group cursor-pointer border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all duration-500"
+              className="relative overflow-hidden rounded-2xl p-8 mb-8 text-center group cursor-pointer border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-500 shadow-sm"
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -380,7 +380,7 @@ export default function DashboardPage() {
                 if (file) handleFileUpload(file);
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-indigo-600/[0.03] to-indigo-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-100/0 via-indigo-600/[0.03] to-indigo-100/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
               <input
                 ref={fileInputRef}
                 type="file"
@@ -392,14 +392,14 @@ export default function DashboardPage() {
                 }}
               />
               <div className="relative z-10 flex flex-col items-center justify-center py-12">
-                <div className="w-16 h-16 mb-6 rounded-2xl flex items-center justify-center border border-white/[0.08] bg-white/[0.04] group-hover:scale-110 group-hover:border-indigo-500/30 transition-all duration-300">
-                  <Upload className="w-7 h-7 text-white/40 group-hover:text-indigo-400 transition-colors" />
+                <div className="w-16 h-16 mb-6 rounded-2xl flex items-center justify-center border border-gray-200 bg-gray-50 group-hover:bg-white group-hover:scale-110 group-hover:border-indigo-500/30 transition-all duration-300 shadow-sm">
+                  <Upload className="w-7 h-7 text-gray-400 group-hover:text-indigo-500 transition-colors" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-white tracking-[-0.01em]">Fotoğraf Yükle</h3>
-                <p className="text-white/30 text-[14px] font-light mb-8">Sürükleyip bırakın veya seçmek için tıklayın (JPG, PNG)</p>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 tracking-[-0.01em]">Fotoğraf Yükle</h3>
+                <p className="text-gray-500 text-[14px] font-light mb-8">Sürükleyip bırakın veya seçmek için tıklayın (JPG, PNG)</p>
                 <span
                   className="text-white font-semibold py-3 px-8 rounded-full text-[14px] inline-block transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
-                  style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
+                  style={{ background: "linear-gradient(135deg, #111111, #333333)" }}
                 >
                   Görsel Seç
                 </span>
@@ -416,29 +416,29 @@ export default function DashboardPage() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
               onAnimationComplete={handleCanvasReady}
-              className="rounded-2xl p-6 md:p-8 mb-8 border border-white/[0.06] bg-white/[0.02]"
+              className="rounded-2xl p-6 md:p-8 mb-8 border border-gray-200 bg-white shadow-sm"
             >
               {apiError && (
-                <div className="mb-4 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/[0.1] text-red-400 text-[13px] text-center">
+                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-[13px] text-center">
                   API Hatası: {apiError}
                 </div>
               )}
 
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-white flex items-center gap-3 tracking-[-0.01em]">
-                    <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold" style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>2</span>
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-3 tracking-[-0.01em]">
+                    <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold text-white shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>2</span>
                     Köşeleri Seçin
                   </h2>
-                  <p className="text-white/35 mt-1 text-[14px] font-light">
+                  <p className="text-gray-500 mt-1 text-[14px] font-light">
                     Ölçülecek alanın 4 köşesine sırasıyla tıklayın.{" "}
-                    <span className="text-indigo-400 font-semibold">{points.length}</span>/4 Seçildi
+                    <span className="text-indigo-600 font-semibold">{points.length}</span>/4 Seçildi
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={handleReset}
-                    className="px-4 py-2 rounded-xl border border-rose-500/20 text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all text-[13px] font-medium flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all text-[13px] font-medium flex items-center gap-2"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Farklı Görsel Seç
                   </button>
@@ -446,8 +446,8 @@ export default function DashboardPage() {
                     onClick={() => setMagnifierEnabled((v) => !v)}
                     className={`px-4 py-2 rounded-xl border text-[13px] font-medium flex items-center gap-2 transition-all ${
                       magnifierEnabled
-                        ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
-                        : "border-white/[0.08] text-white/40 hover:bg-white/[0.04] hover:text-white/70"
+                        ? "border-indigo-200 bg-indigo-50 text-indigo-600"
+                        : "border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     <ZoomIn className="w-3.5 h-3.5" />
@@ -459,7 +459,7 @@ export default function DashboardPage() {
                       pointsRef.current = [];
                       redrawCanvas();
                     }}
-                    className="px-4 py-2 rounded-xl border border-white/[0.08] text-white/40 hover:bg-white/[0.04] hover:text-white/70 transition-all text-[13px] font-medium flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all text-[13px] font-medium flex items-center gap-2"
                   >
                     <RotateCcw className="w-3.5 h-3.5" /> Temizle
                   </button>
@@ -469,24 +469,25 @@ export default function DashboardPage() {
                     className={`px-5 py-2 rounded-xl font-semibold text-[13px] flex items-center gap-2 transition-all ${
                       points.length === 4
                         ? "text-white hover:scale-[1.03] active:scale-[0.97]"
-                        : "bg-white/[0.04] text-white/20 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                     }`}
-                    style={points.length === 4 ? { background: "linear-gradient(135deg, #6366f1, #4f46e5)" } : {}}
+                    style={points.length === 4 ? { background: "linear-gradient(135deg, #111111, #333333)" } : {}}
                   >
                     <Zap className="w-3.5 h-3.5" /> Hesapla
                   </button>
                 </div>
               </div>
 
-              <div className="w-full rounded-xl p-2 border border-white/[0.06] bg-black/30">
+              <div className="w-full rounded-xl p-2 border border-gray-200 bg-gray-50">
                 <div
                   ref={containerRef}
                   className="relative"
                   style={{
                     borderRadius: "0.75rem",
                     overflow: "hidden",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(0,0,0,0.1)",
                     minHeight: 200,
+                    backgroundColor: "#fff"
                   }}
                 >
                   <canvas
@@ -512,18 +513,19 @@ export default function DashboardPage() {
                       display: "none",
                       zIndex: 50,
                       backgroundRepeat: "no-repeat",
+                      backgroundColor: "#fff",
                     }}
                   >
                     <span
                       style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%,-50%)",
-                        color: "rgba(99,102,241,0.5)",
-                        fontSize: 20,
-                        fontWeight: 300,
-                        pointerEvents: "none",
+                         position: "absolute",
+                         top: "50%",
+                         left: "50%",
+                         transform: "translate(-50%,-50%)",
+                         color: "rgba(99,102,241,0.5)",
+                         fontSize: 20,
+                         fontWeight: 300,
+                         pointerEvents: "none",
                       }}
                     >
                       +
@@ -542,22 +544,22 @@ export default function DashboardPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="rounded-2xl p-16 text-center border border-white/[0.06] bg-white/[0.02]"
+              className="rounded-2xl p-16 text-center border border-gray-200 bg-white shadow-sm"
             >
               <div className="relative w-20 h-20 mx-auto mb-8">
-                <div className="absolute inset-0 rounded-full border-t-2 border-indigo-500/60 animate-spin" />
+                <div className="absolute inset-0 rounded-full border-t-2 border-indigo-500 animate-spin" />
                 <div
-                  className="absolute inset-2 rounded-full border-r-2 border-teal-500/40 animate-spin"
+                  className="absolute inset-2 rounded-full border-r-2 border-teal-500 animate-spin"
                   style={{ animationDirection: "reverse", animationDuration: "1.5s" }}
                 />
                 <div
-                  className="absolute inset-4 rounded-full border-b-2 border-violet-500/30 animate-spin"
+                  className="absolute inset-4 rounded-full border-b-2 border-amber-500 animate-spin"
                   style={{ animationDuration: "2s" }}
                 />
-                <Loader2 className="absolute inset-0 w-6 h-6 m-auto text-white/60 animate-pulse" />
+                <Loader2 className="absolute inset-0 w-6 h-6 m-auto text-gray-400 animate-pulse" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2 tracking-[-0.01em]">Yapay Zeka Analiz Ediyor...</h3>
-              <p className="text-white/30 text-[14px] font-light">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2 tracking-[-0.01em]">Yapay Zeka Analiz Ediyor...</h3>
+              <p className="text-gray-500 text-[14px] font-light">
                 Referans nesneler tespit ediliyor ve pikseller gerçek dünya ölçülerine çevriliyor.
               </p>
             </motion.section>
@@ -572,55 +574,55 @@ export default function DashboardPage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="rounded-2xl overflow-hidden relative border border-white/[0.06] bg-white/[0.02]">
+              <div className="rounded-2xl overflow-hidden relative border border-gray-200 bg-white shadow-sm">
                 {/* Subtle glow based on confidence */}
                 <div
-                  className={`absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[200px] rounded-full blur-3xl opacity-[0.06] ${
+                  className={`absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[200px] rounded-full blur-3xl opacity-10 ${
                     confColors[result.guven_skoru]?.glow
                   }`}
                 />
                 <div className="p-8 relative">
                   <div className="flex items-center justify-center gap-3 mb-10">
-                    <div className="p-2 bg-emerald-500/[0.08] text-emerald-400 rounded-xl border border-emerald-500/[0.1]">
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
-                    <h2 className="text-2xl font-semibold text-white tracking-[-0.02em]">Ölçüm Tamamlandı</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 tracking-[-0.02em]">Ölçüm Tamamlandı</h2>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <div className="border border-white/[0.06] bg-white/[0.02] rounded-2xl p-6 relative overflow-hidden group hover:border-white/[0.1] transition-all">
+                    <div className="border border-gray-200 bg-gray-50 rounded-2xl p-6 relative overflow-hidden group hover:border-gray-300 transition-all">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.04] rounded-full blur-2xl group-hover:bg-indigo-500/[0.08] transition-all" />
-                      <p className="text-white/30 text-[12px] font-medium uppercase tracking-widest mb-1">Genişlik</p>
+                      <p className="text-gray-500 text-[12px] font-medium uppercase tracking-widest mb-1">Genişlik</p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-white tracking-tight">{result.duvar_genislik_cm}</span>
-                        <span className="text-lg text-white/30 font-light">cm</span>
+                        <span className="text-5xl font-bold text-gray-900 tracking-tight">{result.duvar_genislik_cm}</span>
+                        <span className="text-lg text-gray-400 font-light">cm</span>
                       </div>
-                      <p className="text-indigo-400/70 font-medium mt-2 text-[13px]">{result.duvar_genislik_m} m</p>
+                      <p className="text-indigo-600 font-medium mt-2 text-[13px]">{result.duvar_genislik_m} m</p>
                     </div>
-                    <div className="border border-white/[0.06] bg-white/[0.02] rounded-2xl p-6 relative overflow-hidden group hover:border-white/[0.1] transition-all">
+                    <div className="border border-gray-200 bg-gray-50 rounded-2xl p-6 relative overflow-hidden group hover:border-gray-300 transition-all">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/[0.04] rounded-full blur-2xl group-hover:bg-teal-500/[0.08] transition-all" />
-                      <p className="text-white/30 text-[12px] font-medium uppercase tracking-widest mb-1">Yükseklik</p>
+                      <p className="text-gray-500 text-[12px] font-medium uppercase tracking-widest mb-1">Yükseklik</p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-white tracking-tight">{result.duvar_yukseklik_cm}</span>
-                        <span className="text-lg text-white/30 font-light">cm</span>
+                        <span className="text-5xl font-bold text-gray-900 tracking-tight">{result.duvar_yukseklik_cm}</span>
+                        <span className="text-lg text-gray-400 font-light">cm</span>
                       </div>
-                      <p className="text-teal-400/70 font-medium mt-2 text-[13px]">{result.duvar_yukseklik_m} m</p>
+                      <p className="text-teal-600 font-medium mt-2 text-[13px]">{result.duvar_yukseklik_m} m</p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl p-5 border border-white/[0.06] bg-white/[0.02] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                  <div className="rounded-xl p-5 border border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div className="flex flex-col">
-                      <span className="text-[11px] text-white/20 uppercase tracking-widest mb-1">Referans Tipi</span>
-                      <span className="text-white/70 text-[14px] font-medium">{result.referans}</span>
+                      <span className="text-[11px] text-gray-400 uppercase tracking-widest mb-1">Referans Tipi</span>
+                      <span className="text-gray-900 text-[14px] font-medium">{result.referans}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[11px] text-white/20 uppercase tracking-widest mb-1">Algoritma Açıklaması</span>
-                      <span className="text-white/40 text-[13px] font-light">{result.aciklama}</span>
+                      <span className="text-[11px] text-gray-400 uppercase tracking-widest mb-1">Algoritma Açıklaması</span>
+                      <span className="text-gray-600 text-[13px] font-light">{result.aciklama}</span>
                     </div>
                     <div className="flex flex-col md:items-end">
-                      <span className="text-[11px] text-white/20 uppercase tracking-widest mb-1">Güven Skoru</span>
+                      <span className="text-[11px] text-gray-400 uppercase tracking-widest mb-1">Güven Skoru</span>
                       <span
-                        className={`px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
+                        className={`px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider border border-white/50 ${
                           confColors[result.guven_skoru]?.badge
                         }`}
                       >
@@ -632,7 +634,7 @@ export default function DashboardPage() {
                   <div className="text-center">
                     <button
                       onClick={handleReset}
-                      className="text-indigo-400/70 hover:text-indigo-400 transition-colors text-[13px] font-medium flex items-center justify-center gap-2 mx-auto"
+                      className="text-indigo-600 hover:text-indigo-700 transition-colors text-[13px] font-medium flex items-center justify-center gap-2 mx-auto"
                     >
                       <RefreshCw className="w-3.5 h-3.5" /> Yeni Fotoğraf Yükle
                     </button>
