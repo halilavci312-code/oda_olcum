@@ -14,6 +14,9 @@ import {
   LogOut,
   RefreshCw,
   ArrowLeft,
+  Info,
+  Clock,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -317,46 +320,96 @@ export default function OlcumPage() {
         <AnimatePresence mode="wait">
           {/* ── STEP 1: UPLOAD ───────────────────────────────────── */}
           {step === "upload" && (
-            <motion.section
-              key="upload"
+            <motion.div
+              key="upload-container"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
-              className="relative overflow-hidden rounded-2xl p-8 mb-8 text-center group cursor-pointer border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-500 shadow-sm"
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const file = e.dataTransfer.files?.[0];
-                if (file) handleFileUpload(file);
-              }}
+              className="w-full flex flex-col gap-8"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-100/0 via-indigo-600/[0.03] to-indigo-100/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/jpg"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleFileUpload(f);
+              {/* UPLOAD CARD */}
+              <section
+                className="relative overflow-hidden rounded-2xl p-8 text-center group cursor-pointer border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-500 shadow-sm"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleFileUpload(file);
                 }}
-              />
-              <div className="relative z-10 flex flex-col items-center justify-center py-12">
-                <div className="w-16 h-16 mb-6 rounded-2xl flex items-center justify-center border border-gray-200 bg-gray-50 group-hover:bg-white group-hover:scale-110 group-hover:border-indigo-500/30 transition-all duration-300 shadow-sm">
-                  <Upload className="w-7 h-7 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-100/0 via-indigo-600/[0.03] to-indigo-100/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileUpload(f);
+                  }}
+                />
+                <div className="relative z-10 flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 mb-6 rounded-2xl flex items-center justify-center border border-gray-200 bg-gray-50 group-hover:bg-white group-hover:scale-110 group-hover:border-indigo-500/30 transition-all duration-300 shadow-sm">
+                    <Upload className="w-7 h-7 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-gray-900 tracking-[-0.01em]">Fotoğraf Yükle</h3>
+                  <p className="text-gray-500 text-[14px] font-light mb-8">Sürükleyip bırakın veya seçmek için tıklayın (JPG, PNG)</p>
+                  <span
+                    className="text-white font-semibold py-3 px-8 rounded-full text-[14px] inline-block transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                    style={{ background: "linear-gradient(135deg, #111111, #333333)" }}
+                  >
+                    Görsel Seç
+                  </span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900 tracking-[-0.01em]">Fotoğraf Yükle</h3>
-                <p className="text-gray-500 text-[14px] font-light mb-8">Sürükleyip bırakın veya seçmek için tıklayın (JPG, PNG)</p>
-                <span
-                  className="text-white font-semibold py-3 px-8 rounded-full text-[14px] inline-block transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
-                  style={{ background: "linear-gradient(135deg, #111111, #333333)" }}
-                >
-                  Görsel Seç
-                </span>
-              </div>
-            </motion.section>
+              </section>
+
+              {/* RULES SECTION */}
+              <section className="bg-[#f8fafc] border border-gray-200 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start shadow-sm">
+                <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center text-indigo-500">
+                  <Info className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 tracking-tight">Doğru Ölçüm İçin Fotoğraf Kuralları</h3>
+                  <ul className="space-y-3 text-[14px] text-gray-600 font-light">
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                      Yere veya duvara bir <b>A4 Kağıdı (21x29.7 cm)</b> tamamen düz bir şekilde (kıvrımsız) yerleştirilmiş olmalıdır.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                      Kamera, A4 kağıdına ve duvara <b>tam karşıdan veya çok hafif açıyla</b> bakmalıdır. (Dar açılı çekimler yanılsamaya sebep olur)
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                      Ölçmek istediğiniz alanın 4 köşesi ve A4 kağıdı kare <b>içerisinde tamamen net</b> bir şekilde görünmelidir.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                      Ortam ışığının iyi olmasına ve bulanıklık olmamasına dikkat edin.
+                    </li>
+                  </ul>
+                </div>
+              </section>
+
+              {/* HISTORY SECTION */}
+              <section className="mb-12">
+                <div className="flex items-center justify-between mb-4 px-2">
+                  <h2 className="text-xl font-bold text-gray-900 tracking-[-0.01em]">Geçmiş Ölçümlerim</h2>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="p-12 text-center flex flex-col items-center justify-center">
+                    <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+                       <Clock className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-gray-900 font-semibold mb-1 tracking-[-0.01em]">Henüz ölçüm geçmişiniz yok</h3>
+                    <p className="text-gray-500 text-[14px]">Sisteme yüklediğiniz ve tamamlanan başarılı ölçümleriniz burada listelenir.</p>
+                  </div>
+                </div>
+              </section>
+
+            </motion.div>
           )}
 
           {/* ── STEP 2: CANVAS ───────────────────────────────────── */}
