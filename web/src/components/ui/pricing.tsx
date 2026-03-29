@@ -14,6 +14,7 @@ import { Check, Star as LucideStar } from "lucide-react";
 import NumberFlow from "@number-flow/react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { GlowCard } from "@/components/spotlight-card";
 
 // --- UTILITY FUNCTIONS ---
 
@@ -214,66 +215,72 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
         damping: 20,
         delay: index * 0.12,
       }}
-      className={cn(
-        "rounded-2xl p-8 flex flex-col relative",
-        plan.isPopular
-          ? "bg-white border-2 border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.1)]"
-          : "bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-300"
-      )}
+      className="h-full w-full"
     >
-      {plan.isPopular && (
-        <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
-          <div className="py-1.5 px-4 rounded-full flex items-center gap-1.5 shadow-md" style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
-            <LucideStar className="text-white h-3.5 w-3.5 fill-current" />
-            <span className="text-white text-[12px] font-semibold">En Popüler</span>
+      <GlowCard
+        customSize
+        glowColor={plan.isPopular ? "purple" : "blue"}
+        className={cn(
+          "h-full w-full rounded-2xl p-8 flex flex-col relative",
+          plan.isPopular
+            ? "border-none bg-white/95 shadow-[0_0_40px_rgba(99,102,241,0.15)]"
+            : "border border-gray-200 bg-white/90 hover:border-gray-300 hover:shadow-sm transition-all duration-300"
+        )}
+      >
+        {plan.isPopular && (
+          <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 z-20">
+            <div className="py-1.5 px-4 rounded-full flex items-center gap-1.5 shadow-md" style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
+              <LucideStar className="text-white h-3.5 w-3.5 fill-current" />
+              <span className="text-white text-[12px] font-semibold">En Popüler</span>
+            </div>
+          </div>
+        )}
+        <div className="flex-1 flex flex-col text-center relative z-10">
+          <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+          <p className="mt-2 text-[13px] text-gray-500 font-light">{plan.description}</p>
+          <div className="mt-6 flex items-baseline justify-center gap-x-1">
+            <span className="text-5xl font-bold tracking-tight text-gray-900">
+              <NumberFlow
+                value={isMonthly ? Number(plan.price) : Number(plan.yearlyPrice)}
+                format={{ style: "currency", currency: "TRY", minimumFractionDigits: 0 }}
+                className="font-variant-numeric: tabular-nums"
+              />
+            </span>
+            <span className="text-[13px] font-medium text-gray-400">/ {plan.period}</span>
+          </div>
+          <p className="text-[12px] text-gray-400 mt-2">
+            {isMonthly ? "Aylık Faturalandırılır" : "Yıllık Faturalandırılır"}
+          </p>
+
+          <ul role="list" className="mt-8 space-y-3 text-[13px] text-left text-gray-600 font-light">
+            {plan.features.map((feature) => (
+              <li key={feature} className="flex gap-x-3 items-center">
+                <Check
+                  className={cn("h-4 w-4 flex-none", plan.isPopular ? "text-indigo-500" : "text-gray-400")}
+                  aria-hidden="true"
+                />
+                {feature}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-auto pt-8">
+            <Link
+              href={plan.href}
+              className={cn(
+                buttonVariants({ variant: plan.isPopular ? "default" : "outline", size: "lg" }),
+                "w-full rounded-xl text-[14px] font-semibold h-11 transition-all z-20 relative",
+                plan.isPopular
+                  ? "text-white border-0 hover:shadow-md"
+                  : "bg-transparent border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+              style={plan.isPopular ? { background: "linear-gradient(135deg, #6366f1, #4f46e5)" } : {}}
+            >
+              {plan.buttonText}
+            </Link>
           </div>
         </div>
-      )}
-      <div className="flex-1 flex flex-col text-center">
-        <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
-        <p className="mt-2 text-[13px] text-gray-500 font-light">{plan.description}</p>
-        <div className="mt-6 flex items-baseline justify-center gap-x-1">
-          <span className="text-5xl font-bold tracking-tight text-gray-900">
-            <NumberFlow
-              value={isMonthly ? Number(plan.price) : Number(plan.yearlyPrice)}
-              format={{ style: "currency", currency: "TRY", minimumFractionDigits: 0 }}
-              className="font-variant-numeric: tabular-nums"
-            />
-          </span>
-          <span className="text-[13px] font-medium text-gray-400">/ {plan.period}</span>
-        </div>
-        <p className="text-[12px] text-gray-400 mt-2">
-          {isMonthly ? "Aylık Faturalandırılır" : "Yıllık Faturalandırılır"}
-        </p>
-
-        <ul role="list" className="mt-8 space-y-3 text-[13px] text-left text-gray-600 font-light">
-          {plan.features.map((feature) => (
-            <li key={feature} className="flex gap-x-3 items-center">
-              <Check
-                className={cn("h-4 w-4 flex-none", plan.isPopular ? "text-indigo-500" : "text-gray-400")}
-                aria-hidden="true"
-              />
-              {feature}
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-auto pt-8">
-          <Link
-            href={plan.href}
-            className={cn(
-              buttonVariants({ variant: plan.isPopular ? "default" : "outline", size: "lg" }),
-              "w-full rounded-xl text-[14px] font-semibold h-11 transition-all",
-              plan.isPopular
-                ? "text-white border-0 hover:shadow-md"
-                : "bg-transparent border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            )}
-            style={plan.isPopular ? { background: "linear-gradient(135deg, #6366f1, #4f46e5)" } : {}}
-          >
-            {plan.buttonText}
-          </Link>
-        </div>
-      </div>
+      </GlowCard>
     </motion.div>
   );
 }

@@ -3,6 +3,7 @@
 import { Home, UploadCloud, Crown, LayoutDashboard, Zap, Activity, Clock, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { GlowCard } from "@/components/spotlight-card";
 
 export default function DashboardOverviewPage() {
   return (
@@ -88,15 +89,17 @@ export default function DashboardOverviewPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="group bg-white border border-gray-200 hover:border-indigo-300 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col items-start relative overflow-hidden"
+            className="h-full w-full"
           >
-            <div className="w-12 h-12 bg-gray-50 group-hover:bg-indigo-50 rounded-xl flex items-center justify-center border border-gray-100 mb-6 transition-colors">
-              <UploadCloud className="w-6 h-6 text-gray-700 group-hover:text-indigo-600 transition-colors" />
-            </div>
-            <h3 className="font-semibold text-gray-900 text-lg tracking-[-0.01em] mb-2">Akıllı Ölçüm Başlat</h3>
-            <p className="text-gray-500 text-[14px] font-light leading-relaxed">
-              Odanızın fotoğrafını yükleyin, yapay zeka ile santimetresine kadar gerçek dünya ölçülerini alın.
-            </p>
+            <GlowCard customSize glowColor="blue" className="group bg-white border border-gray-200 hover:border-indigo-300 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col items-start relative overflow-hidden">
+              <div className="w-12 h-12 bg-gray-50 group-hover:bg-indigo-50 rounded-xl flex items-center justify-center border border-gray-100 mb-6 transition-colors">
+                <UploadCloud className="w-6 h-6 text-gray-700 group-hover:text-indigo-600 transition-colors" />
+              </div>
+              <h3 className="font-semibold text-gray-900 text-lg tracking-[-0.01em] mb-2">Akıllı Ölçüm Başlat</h3>
+              <p className="text-gray-500 text-[14px] font-light leading-relaxed">
+                Odanızın fotoğrafını yükleyin, yapay zeka ile santimetresine kadar gerçek dünya ölçülerini alın.
+              </p>
+            </GlowCard>
           </motion.div>
         </Link>
 
@@ -105,18 +108,20 @@ export default function DashboardOverviewPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
-            className="group bg-white border border-gray-200 hover:border-teal-300 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col items-start relative overflow-hidden"
+            className="h-full w-full"
           >
-            <div className="absolute top-4 right-4 bg-teal-50 text-teal-600 text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              YENİ
-            </div>
-            <div className="w-12 h-12 bg-gray-50 group-hover:bg-teal-50 rounded-xl flex items-center justify-center border border-gray-100 mb-6 transition-colors">
-              <LayoutDashboard className="w-6 h-6 text-gray-700 group-hover:text-teal-600 transition-colors" />
-            </div>
-            <h3 className="font-semibold text-gray-900 text-lg tracking-[-0.01em] mb-2">Eşya Kaldır (AI)</h3>
-            <p className="text-gray-500 text-[14px] font-light leading-relaxed">
-              Dolu bir odanın fotoğrafını yükleyin, yapay zeka mekandaki tüm eşyaları silip size boş odayı sunsun.
-            </p>
+            <GlowCard customSize glowColor="green" className="group bg-white border border-gray-200 hover:border-teal-300 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col items-start relative overflow-hidden">
+              <div className="absolute top-4 right-4 bg-teal-50 text-teal-600 text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider z-20">
+                YENİ
+              </div>
+              <div className="w-12 h-12 bg-gray-50 group-hover:bg-teal-50 rounded-xl flex items-center justify-center border border-gray-100 mb-6 transition-colors relative z-10">
+                <LayoutDashboard className="w-6 h-6 text-gray-700 group-hover:text-teal-600 transition-colors" />
+              </div>
+              <h3 className="font-semibold text-gray-900 text-lg tracking-[-0.01em] mb-2 relative z-10">Eşya Kaldır (AI)</h3>
+              <p className="text-gray-500 text-[14px] font-light leading-relaxed relative z-10">
+                Dolu bir odanın fotoğrafını yükleyin, yapay zeka mekandaki tüm eşyaları silip size boş odayı sunsun.
+              </p>
+            </GlowCard>
           </motion.div>
         </Link>
       </div>
