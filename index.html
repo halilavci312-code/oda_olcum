@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yapay Zeka Mobilya & Duvar Ölçüm Sistemi</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            900: '#134e4a',
+                        },
+                        dark: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        /* Glassmorphism Classes */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        /* Canvas Container */
+        #canvas-container {
+            position: relative;
+            display: block;
+            width: 100%;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(20, 184, 166, 0.3);
+            transition: all 0.3s ease;
+        }
+        #canvas-container:hover {
+            border-color: rgba(20, 184, 166, 0.8);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+        /* Magnifier Lens */
+        #magnifier {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid #14b8a6;
+            box-shadow: 0 0 20px rgba(20, 184, 166, 0.5), inset 0 0 4px rgba(0,0,0,0.3);
+            pointer-events: none;
+            display: none;
+            z-index: 50;
+            overflow: hidden;
+            background-repeat: no-repeat;
+        }
+        #magnifier::after {
+            content: '+';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(20, 184, 166, 0.6);
+            font-size: 22px;
+            font-weight: 300;
+            pointer-events: none;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="min-h-screen relative font-sans antialiased selection:bg-brand-500 selection:text-white">
+    <!-- Auth Guard: Giriş kontrolü -->
+    <div id="auth-loading" class="fixed inset-0 bg-[#0f172a] z-[999] flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-10 h-10 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-400">Oturum kontrol ediliyor...</p>
+        </div>
+    </div>
+
+    <!-- User Bar -->
+    <div id="user-bar" class="hidden fixed top-0 left-0 right-0 z-50 py-3 px-6 flex items-center justify-between" style="background:rgba(15,23,42,0.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06);">
+        <a href="landing.html" class="text-brand-500 font-extrabold text-lg" style="text-decoration:none;">Logo</a>
+        <div class="flex items-center gap-4">
+            <span class="text-gray-400 text-sm" id="user-email"></span>
+            <button onclick="handleLogout()" class="px-4 py-1.5 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all text-sm font-medium">Çıkış Yap</button>
+        </div>
+    </div>
+
+    <!-- Starfield Background -->
+    <canvas id="starfield" class="fixed inset-0 w-full h-full -z-10 pointer-events-none" style="pointer-events: none !important; z-index: -9999 !important;"></canvas>
+
+    <main class="container mx-auto px-4 py-12 pt-24 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <div class="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-brand-500/10 text-brand-500 border border-brand-500/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                Akıllı <span class="text-brand-500">Ölçüm</span> Sistemi
+            </h1>
+            <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-light">
+                Fotoğrafınızı yükleyin, duvarın 4 köşesini seçin ve yapay zeka santimetre milimetresine kadar ölçsün.
+            </p>
+        </header>
+
+        <!-- Step 1: Upload Section -->
+        <section id="upload-section" class="glass-card rounded-3xl p-8 mb-8 text-center transition-all duration-500 relative overflow-hidden group">
+            <input type="file" id="file-input" accept="image/jpeg, image/png, image/jpg" class="hidden">
+            
+            <div class="absolute inset-0 bg-gradient-to-r from-brand-600/0 via-brand-600/5 to-brand-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            
+            <div class="relative z-10 flex flex-col items-center justify-center py-10" id="upload-dropzone">
+                <div class="w-20 h-20 mb-6 rounded-full bg-dark-800 flex items-center justify-center border border-gray-700 shadow-xl group-hover:scale-110 group-hover:border-brand-500/50 transition-all duration-300">
+                    <svg class="w-10 h-10 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </div>
+                <h3 class="text-2xl font-semibold mb-2 text-white">Fotoğraf Yükle</h3>
+                <p class="text-gray-400 mb-6">Sürükleyip bırakın veya seçmek için tıklayın (JPG, PNG)</p>
+                <button onclick="document.getElementById('file-input').click()" class="bg-brand-600 hover:bg-brand-500 text-white font-medium py-3 px-8 rounded-full shadow-[0_0_20px_rgba(20,184,166,0.4)] hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] transition-all duration-300 transform hover:-translate-y-1">
+                    Görsel Seç
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 2: Canvas Section (Hidden Initially) -->
+        <section id="canvas-section" class="glass-card rounded-3xl p-6 md:p-8 mb-8 hidden opacity-0 transition-opacity duration-500">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                        <span class="bg-brand-500 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+                        Köşeleri Seçin
+                    </h2>
+                    <p class="text-gray-400 mt-1" id="points-status">Ölçülecek alanın (duvarın vb.) 4 köşesine sırasıyla tıklayın. (<span id="points-count" class="text-brand-500 font-bold">0</span>/4 Seçildi)</p>
+                </div>
+                <div class="flex gap-3">
+                    <button id="btn-magnifier" class="px-5 py-2.5 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all font-medium text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                        <span id="mag-label">Büyüteç</span>
+                    </button>
+                    <button id="btn-reset" class="px-5 py-2.5 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all font-medium text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Temizle
+                    </button>
+                    <button id="btn-calculate" disabled class="px-6 py-2.5 rounded-xl bg-gray-700 text-gray-400 cursor-not-allowed font-medium text-sm flex items-center gap-2 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Hesapla
+                    </button>
+                </div>
+            </div>
+
+            <div class="w-full bg-dark-900 rounded-xl p-2 border border-gray-800">
+                <div id="canvas-container">
+                    <canvas id="image-canvas"></canvas>
+                    <div id="magnifier"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Step 3: Loading Section (Hidden Initially) -->
+        <section id="loading-section" class="glass-card rounded-3xl p-12 text-center hidden opacity-0 transition-opacity duration-500">
+            <div class="relative w-24 h-24 mx-auto mb-6">
+                <div class="absolute inset-0 rounded-full border-t-2 border-brand-500 animate-spin"></div>
+                <div class="absolute inset-2 rounded-full border-r-2 border-blue-500 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                <div class="absolute inset-4 rounded-full border-b-2 border-purple-500 animate-spin" style="animation-duration: 2s;"></div>
+                <svg class="absolute inset-0 w-8 h-8 m-auto text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Yapay Zeka Analiz Ediyor...</h3>
+            <p class="text-gray-400">Referans nesneler tesit ediliyor ve pikseller gerçek dünya ölçülerine çevriliyor.</p>
+        </section>
+
+        <!-- Step 4: Results Section (Hidden Initially) -->
+        <section id="result-section" class="hidden opacity-0 transition-all duration-700 transform translate-y-8">
+            <div class="glass-card rounded-3xl p-1 border-t border-b border-brand-500/30 overflow-hidden relative">
+                <!-- Background Glow -->
+                <div id="result-glow" class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-brand-500/20 blur-3xl rounded-full"></div>
+                
+                <div class="p-8">
+                    <div class="flex items-center justify-center gap-3 mb-8">
+                        <div class="p-2 bg-green-500/20 text-green-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h2 class="text-3xl font-bold text-white">Ölçüm Tamamlandı</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Width Card -->
+                        <div class="bg-dark-800/80 border border-gray-700 rounded-2xl p-6 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl group-hover:bg-brand-500/20 transition-all"></div>
+                            <p class="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Genişlik</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-5xl font-extrabold text-white" id="res-width-cm">--</span>
+                                <span class="text-xl text-gray-400">cm</span>
+                            </div>
+                            <p class="text-brand-400 font-medium mt-2 text-sm" id="res-width-m">-- m</p>
+                        </div>
+
+                        <!-- Height Card -->
+                        <div class="bg-dark-800/80 border border-gray-700 rounded-2xl p-6 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+                            <p class="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Yükseklik</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-5xl font-extrabold text-white" id="res-height-cm">--</span>
+                                <span class="text-xl text-gray-400">cm</span>
+                            </div>
+                            <p class="text-blue-400 font-medium mt-2 text-sm" id="res-height-m">-- m</p>
+                        </div>
+                    </div>
+
+                    <!-- Meta Details -->
+                    <div class="bg-dark-900/50 rounded-2xl p-5 border border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div class="flex flex-col">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider mb-1">Referans Tipi</span>
+                            <span class="text-white font-medium" id="res-ref">--</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider mb-1">Algoritma Açıklaması</span>
+                            <span class="text-gray-300 text-sm" id="res-desc">--</span>
+                        </div>
+                        <div class="flex flex-col md:items-end">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider mb-1">Güven Skoru</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider" id="res-conf">--</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 text-center">
+                        <button onclick="resetFlow()" class="text-brand-400 hover:text-white transition-colors text-sm font-medium flex items-center justify-center gap-2 mx-auto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                            Yeni Fotoğraf Yükle
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // API URL (User's production Hostinger Server port 8001)
+        const API_URL = "http://187.124.14.208:8001/olc";
+
+        // Elements
+        const fileInput = document.getElementById('file-input');
+        const uploadSection = document.getElementById('upload-section');
+        const canvasSection = document.getElementById('canvas-section');
+        const loadingSection = document.getElementById('loading-section');
+        const resultSection = document.getElementById('result-section');
+        
+        const canvas = document.getElementById('image-canvas');
+        const ctx = canvas.getContext('2d');
+        const btnReset = document.getElementById('btn-reset');
+        const btnCalculate = document.getElementById('btn-calculate');
+        const pointsCountTxt = document.getElementById('points-count');
+
+        // State Variables
+        let currentImage = null;
+        let selectedPoints = []; // [{x, y}]
+        let originalFile = null;
+        let scaleRatio = 1; // Ratio to map canvas pixels back to original image pixels
+
+        // 1. File Upload Handling
+        fileInput.addEventListener('change', handleFileUpload);
+        
+        // Drag & Drop
+        const dropzone = document.getElementById('upload-dropzone');
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('border-brand-500', 'bg-dark-800/80');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('border-brand-500', 'bg-dark-800/80');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('border-brand-500', 'bg-dark-800/80');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileUpload();
+            }
+        });
+
+        function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Optional: validate type
+            if (!file.type.startsWith('image/')) {
+                alert('Lütfen sadece resim dosyası yükleyin.');
+                return;
+            }
+
+            originalFile = file;
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    currentImage = img;
+                    
+                    // IMPORTANT: Show canvas section FIRST so container has real width
+                    uploadSection.classList.add('hidden');
+                    canvasSection.classList.remove('hidden');
+                    // Trigger reflow so browser calculates layout
+                    void canvasSection.offsetWidth;
+                    canvasSection.classList.remove('opacity-0');
+
+                    // Wait one frame for layout to settle, then setup canvas
+                    requestAnimationFrame(() => {
+                        setupCanvas();
+                    });
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // 2. Canvas Rendering & Point Selection
+        const magnifier = document.getElementById('magnifier');
+        const ZOOM = 3; // Magnifier zoom level
+        const MAG_SIZE = 120; // Must match CSS width/height
+
+        function setupCanvas() {
+            selectedPoints = [];
+            pointsCountTxt.textContent = "0";
+            updateCalculateBtn();
+
+            // Container is now visible and full-width, so clientWidth is valid
+            const container = document.getElementById('canvas-container');
+            const containerWidth = container.clientWidth || 800;
+            
+            // Always fill the full container width
+            const ratio = containerWidth / currentImage.width;
+            const drawWidth = containerWidth;
+            const drawHeight = currentImage.height * ratio;
+
+            // Simple 1:1 canvas (no DPI scaling — keeps click coords accurate)
+            canvas.width = drawWidth;
+            canvas.height = drawHeight;
+            canvas.style.width = drawWidth + 'px';
+            canvas.style.height = drawHeight + 'px';
+            
+            // Calculate pixel mapping ratio: original_pixel = canvas_px / scaleRatio
+            scaleRatio = drawWidth / currentImage.width;
+
+            // Setup magnifier background image
+            magnifier.style.backgroundImage = `url(${currentImage.src})`;
+
+            redrawCanvas();
+        }
+
+        function redrawCanvas() {
+            if (!currentImage) return;
+
+            const drawWidth = parseFloat(canvas.style.width);
+            const drawHeight = parseFloat(canvas.style.height);
+
+            // Draw Image
+            ctx.clearRect(0, 0, drawWidth, drawHeight);
+            ctx.drawImage(currentImage, 0, 0, drawWidth, drawHeight);
+
+            // Draw Lines connecting points
+            if (selectedPoints.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(selectedPoints[0].x, selectedPoints[0].y);
+                for (let i = 1; i < selectedPoints.length; i++) {
+                    ctx.lineTo(selectedPoints[i].x, selectedPoints[i].y);
+                }
+                // If 4 points, close the polygon
+                if (selectedPoints.length === 4) {
+                    ctx.lineTo(selectedPoints[0].x, selectedPoints[0].y);
+                    ctx.fillStyle = 'rgba(20, 184, 166, 0.2)'; // brand-500 transparent
+                    ctx.fill();
+                }
+                ctx.strokeStyle = '#14b8a6'; // brand-500
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Draw Points
+            selectedPoints.forEach((pt, index) => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#14b8a6';
+                ctx.stroke();
+
+                // Number
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText((index + 1).toString(), pt.x, pt.y);
+            });
+        }
+
+        // Magnifier toggle state
+        let magnifierEnabled = false;
+        const btnMagnifier = document.getElementById('btn-magnifier');
+        const magLabel = document.getElementById('mag-label');
+
+        btnMagnifier.addEventListener('click', () => {
+            magnifierEnabled = !magnifierEnabled;
+            if (magnifierEnabled) {
+                btnMagnifier.classList.remove('border-gray-600', 'text-gray-300');
+                btnMagnifier.classList.add('border-brand-500', 'bg-brand-500/20', 'text-brand-500');
+                magLabel.textContent = 'Büyüteç Açık';
+            } else {
+                btnMagnifier.classList.add('border-gray-600', 'text-gray-300');
+                btnMagnifier.classList.remove('border-brand-500', 'bg-brand-500/20', 'text-brand-500');
+                magLabel.textContent = 'Büyüteç';
+                magnifier.style.display = 'none';
+            }
+        });
+
+        // Magnifier on mouse move (only when enabled)
+        canvas.addEventListener('mousemove', function(e) {
+            if (!currentImage || !magnifierEnabled) {
+                magnifier.style.display = 'none';
+                return;
+            }
+            magnifier.style.display = 'block';
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Position magnifier near cursor (offset up-right)
+            const container = document.getElementById('canvas-container');
+            magnifier.style.left = (x + 20) + 'px';
+            magnifier.style.top = (y - MAG_SIZE - 10) + 'px';
+
+            // If magnifier goes out of bounds, flip position
+            if (y - MAG_SIZE - 10 < 0) {
+                magnifier.style.top = (y + 20) + 'px';
+            }
+            if (x + 20 + MAG_SIZE > container.clientWidth) {
+                magnifier.style.left = (x - MAG_SIZE - 10) + 'px';
+            }
+
+            // Calculate background position for zoom effect
+            const imgX = x / scaleRatio;
+            const imgY = y / scaleRatio;
+
+            const bgWidth = currentImage.width * ZOOM;
+            const bgHeight = currentImage.height * ZOOM;
+            magnifier.style.backgroundSize = bgWidth + 'px ' + bgHeight + 'px';
+
+            const bgX = -(imgX * ZOOM - MAG_SIZE / 2);
+            const bgY = -(imgY * ZOOM - MAG_SIZE / 2);
+            magnifier.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            magnifier.style.display = 'none';
+        });
+
+        canvas.addEventListener('click', function(e) {
+            if (selectedPoints.length >= 4) return; // Max 4 points
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            selectedPoints.push({ x, y });
+            pointsCountTxt.textContent = selectedPoints.length;
+            
+            redrawCanvas();
+            updateCalculateBtn();
+        });
+
+        btnReset.addEventListener('click', () => {
+            selectedPoints = [];
+            pointsCountTxt.textContent = "0";
+            redrawCanvas();
+            updateCalculateBtn();
+        });
+
+        function updateCalculateBtn() {
+            if (selectedPoints.length === 4) {
+                btnCalculate.disabled = false;
+                btnCalculate.classList.remove('bg-gray-700', 'text-gray-400', 'cursor-not-allowed');
+                btnCalculate.classList.add('bg-brand-600', 'text-white', 'hover:bg-brand-500', 'shadow-[0_0_15px_rgba(20,184,166,0.5)]');
+            } else {
+                btnCalculate.disabled = true;
+                btnCalculate.classList.add('bg-gray-700', 'text-gray-400', 'cursor-not-allowed');
+                btnCalculate.classList.remove('bg-brand-600', 'text-white', 'hover:bg-brand-500', 'shadow-[0_0_15px_rgba(20,184,166,0.5)]');
+            }
+        }
+
+        // 3. API Communication
+        btnCalculate.addEventListener('click', async () => {
+            if (selectedPoints.length !== 4) return;
+
+            // Map canvas display coordinates BACK to actual original image coordinates for OpenCV
+            const actualImagePoints = selectedPoints.map(p => {
+                return [
+                    Math.round(p.x / scaleRatio),
+                    Math.round(p.y / scaleRatio)
+                ];
+            });
+
+            // Transition UI
+            canvasSection.classList.add('opacity-0');
+            setTimeout(() => {
+                canvasSection.classList.add('hidden');
+                loadingSection.classList.remove('hidden');
+                void loadingSection.offsetWidth;
+                loadingSection.classList.remove('opacity-0');
+            }, 500);
+
+            // Prepare Form Data strictly as requested
+            const formData = new FormData();
+            formData.append('fotograf', originalFile);
+            formData.append('duvar_koseler', JSON.stringify(actualImagePoints));
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                    // DO NOT set Content-Type header manually when using FormData, 
+                    // browser sets it automatically with boundary parameter
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.hata || data.cozum || 'Bilinmeyen bir hata oluştu');
+                }
+
+                showResult(data);
+
+            } catch (error) {
+                alert("API Hatası: " + error.message);
+                resetFlow(); // fallback to start
+            }
+        });
+
+        // 4. Result UI Rendering
+        function showResult(data) {
+            // Transitions
+            loadingSection.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                loadingSection.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+                
+                // Populate data
+                document.getElementById('res-width-cm').textContent = data.duvar_genislik_cm;
+                document.getElementById('res-width-m').textContent = data.duvar_genislik_m;
+                
+                document.getElementById('res-height-cm').textContent = data.duvar_yukseklik_cm;
+                document.getElementById('res-height-m').textContent = data.duvar_yukseklik_m;
+                
+                document.getElementById('res-ref').textContent = data.referans;
+                document.getElementById('res-desc').textContent = data.aciklama;
+                
+                // Confidence Score styling
+                const confEl = document.getElementById('res-conf');
+                confEl.textContent = data.guven_skoru;
+                confEl.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ";
+                
+                const glowEl = document.getElementById('result-glow');
+                
+                if (data.guven_skoru === 'yuksek') {
+                    confEl.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                    glowEl.className = "absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-emerald-500/20 blur-3xl rounded-full";
+                } else if (data.guven_skoru === 'orta') {
+                    confEl.classList.add('bg-yellow-500/20', 'text-yellow-400');
+                    glowEl.className = "absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-yellow-500/20 blur-3xl rounded-full";
+                } else {
+                    confEl.classList.add('bg-red-500/20', 'text-red-400');
+                    glowEl.className = "absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-red-500/20 blur-3xl rounded-full";
+                }
+
+                // Animate entry
+                void resultSection.offsetWidth;
+                resultSection.classList.remove('opacity-0', 'translate-y-8');
+            }, 500);
+        }
+
+        // Global Reset function (Yeni Fotograf Yukle)
+        function resetFlow() {
+            fileInput.value = '';
+            originalFile = null;
+            currentImage = null;
+            selectedPoints = [];
+
+            resultSection.classList.add('opacity-0', 'translate-y-8');
+            loadingSection.classList.add('opacity-0');
+            canvasSection.classList.add('opacity-0');
+
+            setTimeout(() => {
+                resultSection.classList.add('hidden');
+                loadingSection.classList.add('hidden');
+                canvasSection.classList.add('hidden');
+                
+                uploadSection.classList.remove('hidden');
+                void uploadSection.offsetWidth;
+                uploadSection.classList.remove('opacity-0');
+            }, 500);
+        }
+
+    </script>
+
+    <!-- Supabase Auth Guard -->
+    <script>
+        const SUPABASE_URL = 'https://dxjktdxhuksqewjiatam.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4amt0ZHhodWtzcWV3amlhdGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTcxODMsImV4cCI6MjA5MDI5MzE4M30.OQMVvuwx4D2vWVyfjVKQgHMqsjVEPH5tgwMlAgbkKws';
+        const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        (async function checkAuth() {
+            const { data: { session } } = await sbClient.auth.getSession();
+
+            if (!session) {
+                // Giriş yapılmamış — landing sayfasına yönlendir
+                window.location.href = 'landing.html';
+                return;
+            }
+
+            // Kullanıcı bilgisini göster
+            document.getElementById('user-email').textContent = session.user.email;
+            document.getElementById('user-bar').classList.remove('hidden');
+
+            // Auth loading ekranını kaldır
+            document.getElementById('auth-loading').style.display = 'none';
+        })();
+
+        async function handleLogout() {
+            await sbClient.auth.signOut();
+            window.location.href = 'landing.html';
+        }
+    </script>
+
+    <!-- Starfield Script -->
+    <script>
+    // ═══════════════════════════════════════
+    // STARFIELD ANIMATION
+    // ═══════════════════════════════════════
+    const starCanvas = document.getElementById('starfield');
+    const starCtx = starCanvas.getContext('2d');
+    let stars = [];
+    let mouseX = null, mouseY = null;
+
+    function initStarfield() {
+        starCanvas.width = window.innerWidth;
+        starCanvas.height = window.innerHeight;
+        stars = [];
+        const count = Math.floor((starCanvas.width * starCanvas.height) / 8000);
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * starCanvas.width,
+                y: Math.random() * starCanvas.height,
+                baseX: 0, baseY: 0,
+                size: 0.5 + Math.random() * 1.5,
+                alpha: Math.random(),
+                alphaSpeed: 0.003 + Math.random() * 0.008,
+                alphaDir: 1
+            });
+            stars[i].baseX = stars[i].x;
+            stars[i].baseY = stars[i].y;
+        }
+    }
+
+    function animateStars() {
+        starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+        stars.forEach(s => {
+            s.alpha += s.alphaSpeed * s.alphaDir;
+            if (s.alpha >= 1) { s.alpha = 1; s.alphaDir = -1; }
+            if (s.alpha <= 0.1) { s.alpha = 0.1; s.alphaDir = 1; }
+
+            let drawX = s.baseX, drawY = s.baseY;
+            if (mouseX !== null) {
+                const dx = mouseX - s.baseX;
+                const dy = mouseY - s.baseY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const radius = 250;
+                if (dist < radius) {
+                    const force = (1 - dist / radius) * 0.35;
+                    drawX = s.baseX + dx * force;
+                    drawY = s.baseY + dy * force;
+                }
+            }
+
+            starCtx.beginPath();
+            starCtx.arc(drawX, drawY, s.size, 0, Math.PI * 2);
+            starCtx.fillStyle = `rgba(180, 210, 230, ${s.alpha * 0.7})`;
+            starCtx.fill();
+        });
+        requestAnimationFrame(animateStars);
+    }
+
+    initStarfield();
+    animateStars();
+    window.addEventListener('resize', initStarfield);
+    document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+    document.addEventListener('mouseleave', () => { mouseX = null; mouseY = null; });
+    </script>
+</body>
+</html>

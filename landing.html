@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akıllı Ölçüm — Yapay Zeka ile Fotoğraftan Duvar Ölçümü</title>
+    <meta name="description" content="Duvarınızın fotoğrafını çekin, 4 köşesini seçin, yapay zeka santimetresine kadar ölçsün. ArUco marker ve A4 referans desteği.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #06070a;
+            --bg-secondary: #0c0e14;
+            --bg-card: rgba(14, 17, 26, 0.8);
+            --bg-card-hover: rgba(20, 24, 38, 0.9);
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-medium: rgba(255,255,255,0.1);
+            --border-accent: rgba(20, 184, 166, 0.4);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #14b8a6;
+            --accent-light: #2dd4bf;
+            --accent-glow: rgba(20, 184, 166, 0.15);
+            --accent-glow-strong: rgba(20, 184, 166, 0.3);
+            --purple: #8b5cf6;
+            --blue: #3b82f6;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection { background: var(--accent); color: #fff; }
+
+        /* ═══════ NAVBAR ═══════ */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 16px 0;
+            background: rgba(6, 7, 10, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.3s;
+        }
+        .navbar.scrolled {
+            background: rgba(6, 7, 10, 0.9);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo {
+            font-size: 1.5rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-decoration: none; letter-spacing: -0.5px;
+        }
+        .nav-buttons { display: flex; gap: 12px; align-items: center; }
+
+        /* ═══════ BUTTONS ═══════ */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 10px 22px; border-radius: 10px; font-family: 'Outfit', sans-serif;
+            font-size: 0.875rem; font-weight: 600; cursor: pointer;
+            transition: all 0.25s ease; text-decoration: none; border: none; outline: none;
+        }
+        .btn-ghost {
+            background: transparent; color: var(--text-secondary);
+            border: 1px solid var(--border-medium);
+        }
+        .btn-ghost:hover { background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.2); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #0f9488);
+            color: #fff; box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 30px var(--accent-glow-strong);
+            transform: translateY(-2px);
+        }
+        .btn-lg { padding: 14px 32px; font-size: 1rem; border-radius: 12px; }
+        .btn-full { width: 100%; }
+
+        /* ═══════ STARFIELD CANVAS ═══════ */
+        #starfield {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -9999; pointer-events: none;
+        }
+
+        /* ═══════ HERO ═══════ */
+        .hero {
+            position: relative; z-index: 1;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 120px 24px 80px;
+        }
+        .hero-content { max-width: 800px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 16px; border-radius: 100px; margin-bottom: 28px;
+            background: var(--accent-glow); border: 1px solid var(--border-accent);
+            color: var(--accent-light); font-size: 0.8rem; font-weight: 500;
+        }
+        .hero-badge-dot {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--accent-glow-strong); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 8px transparent; }
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.2rem); font-weight: 900;
+            line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px;
+        }
+        .hero h1 span { color: var(--accent); }
+        .hero p {
+            font-size: clamp(1rem, 2vw, 1.2rem); color: var(--text-secondary);
+            max-width: 600px; margin: 0 auto 36px; font-weight: 300;
+        }
+        .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+        /* ═══════ SECTIONS ═══════ */
+        section { position: relative; z-index: 1; padding: 100px 24px; }
+        .section-inner { max-width: 1100px; margin: 0 auto; }
+        .section-label {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--accent); font-size: 0.8rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800;
+            letter-spacing: -1px; margin-bottom: 16px;
+        }
+        .section-desc {
+            color: var(--text-secondary); font-size: 1.05rem;
+            max-width: 550px; font-weight: 300;
+        }
+        .section-header { text-align: center; margin-bottom: 64px; }
+        .section-header .section-desc { margin: 0 auto; }
+
+        /* ═══════ HOW IT WORKS — STEPS ═══════ */
+        .steps-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .step-card {
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            border-radius: 20px; padding: 36px 28px; position: relative;
+            overflow: hidden; transition: all 0.3s;
+        }
+        .step-card:hover {
+            border-color: var(--border-accent);
+            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .step-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .step-card:hover::before { opacity: 1; }
+        .step-number {
+            width: 48px; height: 48px; border-radius: 14px; display: flex;
+            align-items: center; justify-content: center; font-weight: 800;
+            font-size: 1.2rem; margin-bottom: 20px;
+            background: var(--accent-glow); color: var(--accent); border: 1px solid var(--border-accent);
+        }
+        .step-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+        .step-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; }
+
+        /* ═══════ FEATURES ═══════ */
+        .features-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        @media (max-width: 600px) {
+            .features-grid { grid-template-columns: 1fr; }
+        }
+        .feature-card {
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            border-radius: 16px; padding: 28px 24px; transition: all 0.3s;
+        }
+        .feature-card:hover {
+            border-color: var(--border-accent); transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+        }
+        .feature-icon {
+            width: 44px; height: 44px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; margin-bottom: 16px;
+            font-size: 1.3rem;
+        }
+        .feature-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+        .feature-card p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; }
+
+        /* ═══════ PRICING ═══════ */
+        .pricing-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px; align-items: start;
+        }
+        .pricing-card {
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            border-radius: 24px; padding: 40px 32px; position: relative;
+            transition: all 0.3s; text-align: center;
+        }
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .pricing-card.popular {
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+        .pricing-popular-badge {
+            position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--accent), #0f9488);
+            color: #fff; padding: 6px 20px; border-radius: 100px;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; white-space: nowrap;
+        }
+        .pricing-name { font-size: 1.2rem; font-weight: 600; margin-bottom: 6px; }
+        .pricing-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px; }
+        .pricing-amount {
+            font-size: 3.2rem; font-weight: 900; letter-spacing: -2px;
+            margin-bottom: 4px;
+        }
+        .pricing-amount span { font-size: 1rem; font-weight: 400; color: var(--text-muted); letter-spacing: 0; }
+        .pricing-period { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 32px; }
+        .pricing-features { list-style: none; text-align: left; margin-bottom: 32px; }
+        .pricing-features li {
+            padding: 8px 0; display: flex; align-items: center; gap: 12px;
+            color: var(--text-secondary); font-size: 0.9rem;
+        }
+        .pricing-features li::before {
+            content: '✓'; display: flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem;
+            background: var(--accent-glow); color: var(--accent); flex-shrink: 0;
+        }
+
+        /* ═══════ PRICING TOGGLE ═══════ */
+        .pricing-toggle-container {
+            display: flex; justify-content: center; margin-bottom: 48px;
+        }
+        .pricing-toggle {
+            position: relative; display: flex; align-items: center;
+            background: rgba(255,255,255,0.05); padding: 4px; border-radius: 100px;
+            border: 1px solid var(--border-medium);
+            width: fit-content;
+        }
+        .pricing-toggle-pill {
+            position: absolute; top: 4px; left: 4px; height: calc(100% - 8px);
+            background: var(--accent); border-radius: 100px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 0; box-shadow: 0 0 15px var(--accent-glow);
+        }
+        .toggle-btn {
+            position: relative; z-index: 1; border: none; background: transparent;
+            padding: 8px 24px; font-family: 'Outfit', sans-serif; font-size: 0.9rem;
+            font-weight: 600; color: var(--text-muted); cursor: pointer;
+            transition: color 0.3s;
+        }
+        .toggle-btn.active { color: #fff; }
+
+        /* ═══════ FOOTER ═══════ */
+        .footer {
+            position: relative; z-index: 1;
+            border-top: 1px solid var(--border-subtle);
+            padding: 40px 24px; text-align: center;
+            color: var(--text-muted); font-size: 0.85rem;
+        }
+
+        /* ═══════ AUTH MODAL ═══════ */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center;
+            padding: 24px; opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box {
+            background: var(--bg-secondary); border: 1px solid var(--border-medium);
+            border-radius: 24px; padding: 40px 32px; width: 100%; max-width: 420px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5); position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 16px; right: 16px; background: none; border: none;
+            color: var(--text-muted); font-size: 1.5rem; cursor: pointer; line-height: 1;
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: #fff; }
+        .modal-box h2 {
+            font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; text-align: center;
+        }
+        .modal-box .modal-subtitle {
+            color: var(--text-muted); font-size: 0.9rem; text-align: center; margin-bottom: 28px;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block; margin-bottom: 6px; font-size: 0.8rem;
+            font-weight: 600; color: var(--text-secondary);
+        }
+        .form-group input {
+            width: 100%; padding: 12px 16px; border-radius: 10px;
+            border: 1px solid var(--border-medium); background: rgba(255,255,255,0.03);
+            color: #fff; font-family: 'Outfit', sans-serif; font-size: 0.9rem;
+            transition: border-color 0.2s; outline: none;
+        }
+        .form-group input:focus { border-color: var(--accent); }
+        .form-group input::placeholder { color: var(--text-muted); }
+        .form-error {
+            color: #f87171; font-size: 0.8rem; margin-top: 8px;
+            min-height: 20px; text-align: center;
+        }
+        .modal-switch {
+            text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--text-muted);
+        }
+        .modal-switch a {
+            color: var(--accent); cursor: pointer; text-decoration: none; font-weight: 600;
+        }
+        .modal-switch a:hover { text-decoration: underline; }
+
+        /* ═══════ ANIMATIONS ═══════ */
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-on-scroll {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .animate-on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-buttons .btn-text { display: none; }
+            .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Starfield Background -->
+    <canvas id="starfield"></canvas>
+
+    <!-- ═══════ NAVBAR ═══════ -->
+    <nav class="navbar" id="navbar">
+        <div class="navbar-inner">
+            <a href="#" class="logo">Logo</a>
+            <div class="nav-buttons">
+                <button class="btn btn-ghost" onclick="openModal('login')">Giriş Yap</button>
+                <button class="btn btn-primary" onclick="openModal('register')">Kaydol</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════ HERO ═══════ -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                Yapay Zeka Destekli Ölçüm
+            </div>
+            <h1>Fotoğrafla Ölçün,<br><span>Yapay Zeka</span> Hesaplasın.</h1>
+            <p>Duvarınızın fotoğrafını çekin, referans nesneyi koyun ve 4 köşeye tıklayın. Geri kalan her şeyi yapay zeka halletsin.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary btn-lg" onclick="openModal('register')">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Hemen Başla
+                </button>
+                <a href="#nasil-calisir" class="btn btn-ghost btn-lg">
+                    Nasıl Çalışır?
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                </a>
+            </div>
+            <!-- Hero Mockup -->
+            <div style="margin-top:48px; position:relative; max-width:700px; margin-left:auto; margin-right:auto;">
+                <div style="background:var(--bg-card); border:1px solid var(--border-accent); border-radius:16px; padding:20px; box-shadow:0 30px 60px rgba(0,0,0,0.5), 0 0 40px var(--accent-glow);">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                        <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div>
+                        <div style="width:10px;height:10px;border-radius:50%;background:#eab308;"></div>
+                        <div style="width:10px;height:10px;border-radius:50%;background:#22c55e;"></div>
+                        <span style="color:var(--text-muted);font-size:0.75rem;margin-left:8px;">Akıllı Ölçüm Sistemi</span>
+                    </div>
+                    <div style="background:var(--bg-primary); border-radius:10px; padding:24px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:200px;">
+                            <div style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Genişlik</div>
+                            <div style="font-size:2.2rem;font-weight:900;color:#fff;">342.5 <span style="font-size:0.9rem;color:var(--text-muted);">cm</span></div>
+                            <div style="color:var(--accent);font-size:0.85rem;font-weight:500;">3.43 m</div>
+                        </div>
+                        <div style="width:1px;height:60px;background:var(--border-medium);"></div>
+                        <div style="flex:1; min-width:200px;">
+                            <div style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Yükseklik</div>
+                            <div style="font-size:2.2rem;font-weight:900;color:#fff;">267.8 <span style="font-size:0.9rem;color:var(--text-muted);">cm</span></div>
+                            <div style="color:#3b82f6;font-size:0.85rem;font-weight:500;">2.68 m</div>
+                        </div>
+                        <div style="width:100%; display:flex; align-items:center; gap:10px; padding-top:12px; border-top:1px solid var(--border-subtle);">
+                            <span style="padding:3px 10px;border-radius:100px;background:rgba(34,197,94,0.15);color:#4ade80;font-size:0.7rem;font-weight:600;">✓ Yüksek Güven</span>
+                            <span style="color:var(--text-muted);font-size:0.75rem;">Referans: ArUco Marker · 2 marker bulundu</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════ NASIL ÇALIŞIR ═══════ -->
+    <section id="nasil-calisir">
+        <div class="section-inner">
+            <div class="section-header">
+                <div class="section-label">─ Nasıl Çalışır</div>
+                <h2 class="section-title">3 Basit Adımda Ölçüm</h2>
+                <p class="section-desc">Herhangi bir ölçüm aleti veya teknik bilgiye gerek yok. Telefonunuz yeterli.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card animate-on-scroll">
+                    <div class="step-number">1</div>
+                    <h3>Fotoğraf Çekin</h3>
+                    <p>Ölçmek istediğiniz duvarın fotoğrafını çekin. Yanına bir A4 kağıdı veya ArUco marker koyun — bu yapay zekanın referans noktası olacak.</p>
+                </div>
+                <div class="step-card animate-on-scroll">
+                    <div class="step-number">2</div>
+                    <h3>Köşeleri Seçin</h3>
+                    <p>Fotoğrafı yükleyin ve ölçülecek alanın 4 köşesine tıklayın. Hassas seçim için büyüteç modunu açabilirsiniz.</p>
+                </div>
+                <div class="step-card animate-on-scroll">
+                    <div class="step-number">3</div>
+                    <h3>Sonucu Alın</h3>
+                    <p>Yapay zeka referans nesneyi otomatik bulur, perspektif düzeltmesi yapar ve genişlik/yüksekliği santimetre cinsinden hesaplar.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════ ÖZELLİKLER ═══════ -->
+    <section id="ozellikler" style="background: var(--bg-secondary);">
+        <div class="section-inner">
+            <div class="section-header">
+                <div class="section-label">─ Özellikler</div>
+                <h2 class="section-title">Neden Akıllı Ölçüm?</h2>
+                <p class="section-desc">Geleneksel ölçüm yöntemlerinin hantallığına son verin.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background:rgba(20,184,166,0.1);">🎯</div>
+                    <h4>Yüksek Doğruluk</h4>
+                    <p>ArUco marker, siyah bantlı A4 ve düz A4 ile 3 katmanlı referans hiyerarşisi.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background:rgba(139,92,246,0.1);">⚡</div>
+                    <h4>Anında Sonuç</h4>
+                    <p>Fotoğrafı yükledikten saniyeler içinde cm ve metre cinsinden ölçüm alın.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background:rgba(59,130,246,0.1);">📱</div>
+                    <h4>Mobil Uyumlu</h4>
+                    <p>Telefonunuzdan fotoğraf çekip anında ölçüm yapın. Ayrı bir uygulama gerekmez.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background:rgba(251,191,36,0.1);">🔗</div>
+                    <h4>Bot Entegrasyonu</h4>
+                    <p>WhatsApp ve Telegram botları ile müşterilerinize uzaktan ölçüm hizmeti sunun. (Yakında)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════ FİYATLANDIRMA ═══════ -->
+    <section id="fiyat">
+        <div class="section-inner">
+            <div class="section-header">
+                <div class="section-label">─ Fiyatlandırma</div>
+                <h2 class="section-title">İşinize Uygun Plan Seçin</h2>
+                <p class="section-desc">Tüm planlar temel ölçüm özelliklerini ve teknik desteği içerir.</p>
+            </div>
+                <!-- Toggle -->
+                <div class="pricing-toggle-container">
+                    <div class="pricing-toggle" id="pricingToggleContainer">
+                        <div class="pricing-toggle-pill" id="pricingPill"></div>
+                        <button class="toggle-btn active" id="btnMonthly" onclick="setPricing('monthly')">Aylık</button>
+                        <button class="toggle-btn" id="btnAnnual" onclick="setPricing('annual')">Yıllık <span>(%20 İndirim)</span></button>
+                    </div>
+                </div>
+
+            <div class="pricing-grid">
+                <!-- Deneme -->
+                <div class="pricing-card animate-on-scroll">
+                    <div class="pricing-name">Deneme</div>
+                    <div class="pricing-desc">Sistemi keşfetmek isteyenler için</div>
+                    <div class="pricing-amount">Ücretsiz</div>
+                    <div class="pricing-period">3 ölçüm hakkı</div>
+                    <ul class="pricing-features">
+                        <li>3 adet ücretsiz ölçüm</li>
+                        <li>Tüm referans tipleri (ArUco, A4)</li>
+                        <li>Temel destek</li>
+                    </ul>
+                    <button class="btn btn-ghost btn-full" onclick="openModal('register')">Ücretsiz Dene</button>
+                </div>
+                <!-- Profesyonel -->
+                <div class="pricing-card popular animate-on-scroll">
+                    <div class="pricing-popular-badge">⭐ En Popüler</div>
+                    <div class="pricing-name">Profesyonel</div>
+                    <div class="pricing-desc">İşletmeler ve profesyoneller için</div>
+                    <div class="pricing-amount" id="pricePro" data-monthly="20.000" data-annual="16.000">₺20.000 <span>/ ay</span></div>
+                    <div class="pricing-period" id="periodPro">Aylık faturalandırılır</div>
+                    <p id="savingsPro" style="color:var(--accent); font-size:0.8rem; font-weight:600; margin-bottom:16px; opacity:0; transition:opacity 0.3s;">Yılda ₺48.000 tasarruf!</p>
+                    <ul class="pricing-features">
+                        <li>Sınırsız ölçüm</li>
+                        <li>Tüm referans tipleri (ArUco, A4)</li>
+                        <li>Öncelikli teknik destek</li>
+                        <li>API erişimi</li>
+                        <li>WhatsApp & Telegram entegrasyonu</li>
+                    </ul>
+                    <button class="btn btn-primary btn-full" onclick="openModal('register')">Hemen Satın Al</button>
+                </div>
+                <!-- İşletme -->
+                <div class="pricing-card animate-on-scroll">
+                    <div class="pricing-name">İşletme</div>
+                    <div class="pricing-desc">Büyük takımlar ve kurumsal çözümler</div>
+                    <div class="pricing-amount">Özel Fiyat</div>
+                    <div class="pricing-period">İhtiyaca göre teklif</div>
+                    <ul class="pricing-features">
+                        <li>Profesyonel'deki her şey</li>
+                        <li>Özel API limitleri</li>
+                        <li>Özel entegrasyon desteği</li>
+                        <li>Eğitim & danışmanlık</li>
+                        <li>SLA garantisi</li>
+                    </ul>
+                    <button class="btn btn-ghost btn-full" onclick="window.open('mailto:info@example.com')">İletişime Geç</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════ FOOTER ═══════ -->
+    <footer class="footer">
+        <div style="max-width:1100px; margin:0 auto;">
+            <p>© 2026 Akıllı Ölçüm Sistemi. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+
+    <!-- ═══════ AUTH MODAL ═══════ -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+
+            <!-- LOGIN FORM -->
+            <div id="login-form">
+                <h2>Giriş Yap</h2>
+                <p class="modal-subtitle">Hesabınıza giriş yapın</p>
+                <div class="form-group">
+                    <label>E-posta</label>
+                    <input type="email" id="login-email" placeholder="ornek@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
+                </div>
+                <div class="form-error" id="login-error"></div>
+                <button class="btn btn-primary btn-full btn-lg" id="login-btn" onclick="handleLogin()">Giriş Yap</button>
+                <div class="modal-switch">
+                    Hesabınız yok mu? <a onclick="switchForm('register')">Kaydol</a>
+                </div>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="register-form" style="display:none;">
+                <h2>Kaydol</h2>
+                <p class="modal-subtitle">Yeni hesap oluşturun</p>
+                <div class="form-group">
+                    <label>Ad Soyad</label>
+                    <input type="text" id="reg-name" placeholder="Adınız Soyadınız">
+                </div>
+                <div class="form-group">
+                    <label>E-posta</label>
+                    <input type="email" id="reg-email" placeholder="ornek@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" id="reg-password" placeholder="En az 6 karakter">
+                </div>
+                <div class="form-error" id="reg-error"></div>
+                <button class="btn btn-primary btn-full btn-lg" id="reg-btn" onclick="handleRegister()">Hesap Oluştur</button>
+                <div class="modal-switch">
+                    Zaten hesabınız var mı? <a onclick="switchForm('login')">Giriş Yap</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SCRIPT 1: SUPABASE CONFIG -->
+    <!-- ═══════════════════════════════════════ -->
+    <script>
+    let sbClient = null;
+    try {
+        const SUPABASE_URL = 'https://dxjktdxhuksqewjiatam.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4amt0ZHhodWtzcWV3amlhdGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTcxODMsImV4cCI6MjA5MDI5MzE4M30.OQMVvuwx4D2vWVyfjVKQgHMqsjVEPH5tgwMlAgbkKws';
+        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized successfully');
+    } catch(e) {
+        console.error('Supabase init failed:', e);
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SCRIPT 2: UI (Starfield, Scroll, Modal, Pricing) -->
+    <!-- ═══════════════════════════════════════ -->
+    <script>
+
+    // ═══════════════════════════════════════
+    // STARFIELD ANIMATION
+    // ═══════════════════════════════════════
+    const starCanvas = document.getElementById('starfield');
+    const starCtx = starCanvas.getContext('2d');
+    let stars = [];
+    let mouseX = null, mouseY = null;
+
+    function initStarfield() {
+        starCanvas.width = window.innerWidth;
+        starCanvas.height = window.innerHeight;
+        stars = [];
+        const count = Math.floor((starCanvas.width * starCanvas.height) / 8000);
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * starCanvas.width,
+                y: Math.random() * starCanvas.height,
+                baseX: 0, baseY: 0,
+                size: 0.5 + Math.random() * 1.5,
+                alpha: Math.random(),
+                alphaSpeed: 0.003 + Math.random() * 0.008,
+                alphaDir: 1
+            });
+            stars[i].baseX = stars[i].x;
+            stars[i].baseY = stars[i].y;
+        }
+    }
+
+    function animateStars() {
+        starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+        stars.forEach(s => {
+            s.alpha += s.alphaSpeed * s.alphaDir;
+            if (s.alpha >= 1) { s.alpha = 1; s.alphaDir = -1; }
+            if (s.alpha <= 0.1) { s.alpha = 0.1; s.alphaDir = 1; }
+
+            let drawX = s.baseX, drawY = s.baseY;
+            if (mouseX !== null) {
+                const dx = mouseX - s.baseX;
+                const dy = mouseY - s.baseY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const radius = 250;
+                if (dist < radius) {
+                    const force = (1 - dist / radius) * 0.35;
+                    drawX = s.baseX + dx * force;
+                    drawY = s.baseY + dy * force;
+                }
+            }
+
+            starCtx.beginPath();
+            starCtx.arc(drawX, drawY, s.size, 0, Math.PI * 2);
+            starCtx.fillStyle = `rgba(180, 210, 230, ${s.alpha * 0.7})`;
+            starCtx.fill();
+        });
+        requestAnimationFrame(animateStars);
+    }
+
+    initStarfield();
+    animateStars();
+    window.addEventListener('resize', initStarfield);
+    document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+    document.addEventListener('mouseleave', () => { mouseX = null; mouseY = null; });
+
+    // ═══════════════════════════════════════
+    // NAVBAR SCROLL EFFECT
+    // ═══════════════════════════════════════
+    window.addEventListener('scroll', () => {
+        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ═══════════════════════════════════════
+    // SCROLL ANIMATIONS
+    // ═══════════════════════════════════════
+    // Staggered scroll animations — more reliable triggering
+    const animElements = document.querySelectorAll('.animate-on-scroll');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                // Calculate stagger delay based on element index within its parent group
+                const siblings = Array.from(entry.target.parentElement.children).filter(c => c.classList.contains('animate-on-scroll'));
+                const idx = siblings.indexOf(entry.target);
+                setTimeout(() => entry.target.classList.add('visible'), idx * 120);
+                observer.unobserve(entry.target); // Trigger only once
+            }
+        });
+    }, { threshold: 0.05, rootMargin: '0px 0px -30px 0px' });
+    animElements.forEach(el => observer.observe(el));
+
+    // Fallback: if elements are already in viewport on page load
+    setTimeout(() => {
+        animElements.forEach(el => {
+            el.classList.add('visible'); // Force visible on everything eventually to avoid blank screens
+        });
+    }, 1000);
+
+    // ═══════════════════════════════════════
+    // AUTH MODAL
+    // ═══════════════════════════════════════
+    function openModal(type) {
+        const modal = document.getElementById('auth-modal');
+        modal.classList.add('active');
+        switchForm(type);
+        // Clear previous errors
+        document.getElementById('login-error').textContent = '';
+        document.getElementById('reg-error').textContent = '';
+    }
+    function closeModal() {
+        document.getElementById('auth-modal').classList.remove('active');
+    }
+    function switchForm(type) {
+        document.getElementById('login-form').style.display = type === 'login' ? 'block' : 'none';
+        document.getElementById('register-form').style.display = type === 'register' ? 'block' : 'none';
+    }
+    // Close modal on overlay click
+    document.getElementById('auth-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+    // Close on Escape key
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // ═══════════════════════════════════════
+    // SUPABASE AUTH HANDLERS
+    // ═══════════════════════════════════════
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errorEl = document.getElementById('login-error');
+        const btn = document.getElementById('login-btn');
+
+        if (!email || !password) { errorEl.textContent = 'Lütfen tüm alanları doldurun.'; return; }
+        if (!sbClient) { errorEl.textContent = 'Bağlantı hatası. Sayfayı yenileyip tekrar deneyin.'; return; }
+
+
+
+        btn.textContent = 'Giriş yapılıyor...';
+        btn.disabled = true;
+
+        let data, error;
+        try {
+            ({ data, error } = await sbClient.auth.signInWithPassword({ email, password }));
+        } catch(e) {
+            errorEl.textContent = 'Bağlantı hatası: ' + e.message; btn.textContent = 'Giriş Yap'; btn.disabled = false; return;
+        }
+
+        if (error) {
+            errorEl.textContent = error.message === 'Invalid login credentials'
+                ? 'E-posta veya şifre hatalı.'
+                : error.message;
+            btn.textContent = 'Giriş Yap';
+            btn.disabled = false;
+        } else {
+            // Başarılı giriş — Ölçüm aracına yönlendir
+            window.location.href = 'index.html';
+        }
+    }
+
+    async function handleRegister() {
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const errorEl = document.getElementById('reg-error');
+        const btn = document.getElementById('reg-btn');
+
+        if (!name || !email || !password) { errorEl.textContent = 'Lütfen tüm alanları doldurun.'; return; }
+        if (password.length < 6) { errorEl.textContent = 'Şifre en az 6 karakter olmalıdır.'; return; }
+
+
+
+        if (!sbClient) { errorEl.textContent = 'Bağlantı hatası. Sayfayı yenileyip tekrar deneyin.'; return; }
+
+        btn.textContent = 'Hesap oluşturuluyor...';
+        btn.disabled = true;
+
+        let data, error;
+        try {
+            ({ data, error } = await sbClient.auth.signUp({
+                email,
+                password,
+                options: { data: { full_name: name } }
+            }));
+        } catch(e) {
+            errorEl.style.color = '#f87171';
+            errorEl.textContent = 'Bağlantı hatası: ' + e.message;
+            btn.textContent = 'Hesap Oluştur';
+            btn.disabled = false;
+            return;
+        }
+
+        if (error) {
+            errorEl.style.color = '#f87171';
+            errorEl.textContent = error.message;
+            btn.textContent = 'Hesap Oluştur';
+            btn.disabled = false;
+        } else {
+            if (data.session === null) {
+                // Supabase'den e-posta doğrulama isteniyorsa
+                errorEl.style.color = '#fbbf24'; // sarımsı uyarı rengi
+                errorEl.textContent = 'Kayıt başarılı! Lütfen e-postanıza gelen doğrulama linkine tıklayın.';
+                btn.textContent = 'Hesap Oluştur';
+                btn.disabled = false;
+            } else {
+                // Kayıt başarılı ve direkt oturum açıldı
+                errorEl.style.color = '#4ade80'; // yeşil
+                errorEl.textContent = 'Hesap oluşturuldu! Giriş yapılıyor...';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            }
+        }
+    }
+
+    // Enter key support for forms
+    document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    document.getElementById('reg-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleRegister(); });
+
+    // ═══════════════════════════════════════
+    // PRICING TOGGLE LOGIC
+    // ═══════════════════════════════════════
+    function setPricing(plan) {
+        try {
+            const btnM = document.getElementById('btnMonthly');
+            const btnA = document.getElementById('btnAnnual');
+            const pill = document.getElementById('pricingPill');
+            const valPro = document.getElementById('pricePro');
+            const perPro = document.getElementById('periodPro');
+            const savPro = document.getElementById('savingsPro');
+            
+            if(!btnM || !valPro) return; // fail safe
+
+            if(plan === 'monthly') {
+                btnM.classList.add('active');
+                if(btnA) btnA.classList.remove('active');
+                if(pill) {
+                    pill.style.width = btnM.offsetWidth + 'px';
+                    pill.style.transform = `translateX(0px)`;
+                }
+                
+                // Text updates
+                valPro.innerHTML = '₺' + valPro.getAttribute('data-monthly') + ' <span>/ ay</span>';
+                if(perPro) perPro.innerText = 'Aylık faturalandırılır';
+                if(savPro) savPro.style.opacity = '0';
+            } else {
+                if(btnA) btnA.classList.add('active');
+                btnM.classList.remove('active');
+                if(pill && btnM) {
+                    pill.style.width = btnA.offsetWidth + 'px';
+                    pill.style.transform = `translateX(${btnM.offsetWidth}px)`;
+                }
+                
+                // Text updates
+                valPro.innerHTML = '₺' + valPro.getAttribute('data-annual') + ' <span>/ ay</span>';
+                if(perPro) perPro.innerText = 'Yıllık faturalandırılır';
+                if(savPro) savPro.style.opacity = '1';
+
+                // Confetti effect based on toggle element position
+                const container = document.getElementById('pricingToggleContainer');
+                if(container && typeof confetti !== 'undefined') {
+                    const rect = container.getBoundingClientRect();
+                    const x = (rect.left + rect.width / 2) / window.innerWidth;
+                    const y = (rect.top + rect.height / 2) / window.innerHeight;
+                    
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { x, y },
+                        colors: ['#14b8a6', '#2dd4bf', '#0f9488', '#ffffff'],
+                        gravity: 1.2
+                    });
+                }
+            }
+        } catch(e) {
+            console.error('Pricing toggle error:', e);
+        }
+    }
+    // Initialize pill position
+    window.addEventListener('load', () => setPricing('monthly'));
+    window.addEventListener('resize', () => {
+        if(document.getElementById('btnAnnual').classList.contains('active')) setPricing('annual');
+        else setPricing('monthly');
+    });
+
+    </script>
+</body>
+</html>
