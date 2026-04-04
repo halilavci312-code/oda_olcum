@@ -7,3 +7,7 @@ env/
 .env
 node_modules/
 .DS_Store
+
+# Ignore temp folders
+tmp_foto_repo/
+tmp_foto_repo_2/
