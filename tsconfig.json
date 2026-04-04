@@ -37,6 +37,9 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "frontend",
+    "tmp_foto_repo",
+    "tmp_foto_repo_2"
   ]
 }
