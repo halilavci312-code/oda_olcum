@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Zap, ShieldCheck, Target, Infinity as InfinityIcon } from "lucide-react";
+import { AuthModal } from "@/components/auth-modal";
 
 function FloatingPaths({ position }: { position: number }) {
   const paths = Array.from({ length: 36 }, (_, i) => ({
@@ -52,11 +53,11 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
   return (
     <>
       {/* Fixed background layer */}
-      <div className="fixed inset-0 z-[-1]" style={{ background: "radial-gradient(ellipse at 50% 0%, #ffffff 0%, #fafafa 55%)" }}>
+      <div className="fixed inset-0 z-[-1] bg-[radial-gradient(ellipse_at_50%_0%,#ffffff_0%,#fafafa_55%)] dark:bg-[radial-gradient(ellipse_at_50%_0%,#111111_0%,#000000_55%)] transition-colors duration-300">
         <FloatingPaths position={1} />
         <FloatingPaths position={-1} />
-        {/* Subtle radial glow for light theme */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-[0.03]"
+        {/* Subtle radial glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-[0.03] dark:opacity-[0.08] transition-opacity duration-300"
           style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)" }} />
       </div>
 
@@ -74,10 +75,10 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 backdrop-blur-sm shadow-sm mb-8"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 backdrop-blur-sm shadow-sm mb-8 transition-colors duration-300"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-              <span className="text-[13px] font-medium text-gray-600">Yapay Zeka Destekli Ölçüm</span>
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+              <span className="text-[13px] font-medium text-gray-600 dark:text-zinc-300">Yapay Zeka Destekli Ölçüm</span>
             </motion.div>
 
             {/* Title */}
@@ -95,7 +96,7 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
                         stiffness: 120,
                         damping: 20,
                       }}
-                      className="inline-block text-gray-900"
+                      className="inline-block text-gray-900 dark:text-zinc-100 transition-colors duration-300"
                     >
                       {letter}
                     </motion.span>
@@ -109,10 +110,10 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.2, duration: 0.8 }}
-              className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-12 font-light leading-relaxed"
+              className="text-lg md:text-xl text-gray-500 dark:text-zinc-400 max-w-2xl mx-auto mb-12 font-light leading-relaxed transition-colors duration-300"
             >
-              Fotoğrafınızı yükleyin, 4 köşeyi işaretleyin. Yapay zeka milimetre hassasiyetle{" "}
-              <span className="text-gray-900 font-medium">duvar ve mobilya boyutlarınızı</span> hesaplasın.
+              Fotoğrafınızı yükleyin, 4 köşeyi işaretleyin. Yapay zeka %90'a varan doğruluk payıyla (±10-15 cm){" "}
+              <span className="text-gray-900 dark:text-zinc-100 font-medium transition-colors duration-300">duvar boyutlarınızı</span> saniyeler içinde hesaplasın.
             </motion.p>
 
             {/* CTA Button — Vercel style (Inverted for light theme) */}
@@ -121,13 +122,14 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.5, duration: 0.8 }}
             >
-              <a
-                href="#nasil-calisir"
-                className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gray-900 text-white font-semibold text-[15px] transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,0,0,0.1)] hover:scale-[1.02] active:scale-[0.98]"
-              >
-                Hemen Ölçüme Başla
-                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </a>
+              <AuthModal redirectUrl="/dashboard/olcum">
+                <button
+                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black font-semibold text-[15px] transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Hemen Ölçüme Başla
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </button>
+              </AuthModal>
             </motion.div>
 
             {/* Trust signal */}
@@ -135,16 +137,28 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 2, duration: 1 }}
-              className="mt-16 flex items-center justify-center gap-6 text-[13px] font-medium text-gray-400"
+              className="mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[13px] font-medium text-gray-500 dark:text-zinc-400 transition-colors duration-300"
             >
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Ücretsiz Başla
+              <div className="flex items-center gap-2 border border-gray-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-300">
+                <div className="w-5 h-5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center border border-indigo-100/50 dark:border-indigo-500/20 transition-colors duration-300">
+                  <Zap className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
+                </div>
+                Hızlı ve YZ Destekli
               </div>
-              <div className="w-px h-3 bg-gray-200" />
-              <div>Kredi Kartı Gerekmez</div>
-              <div className="w-px h-3 bg-gray-200" />
-              <div>Milimetrik Hassasiyet</div>
+              <div className="w-1.5 h-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hidden sm:block transition-colors duration-300" />
+              <div className="flex items-center gap-2 border border-gray-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-300">
+                <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center border border-amber-100/50 dark:border-amber-500/20 transition-colors duration-300">
+                  <InfinityIcon className="w-3 h-3 text-amber-500 dark:text-amber-400" />
+                </div>
+                Sınırsız Kredi
+              </div>
+              <div className="w-1.5 h-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hidden sm:block transition-colors duration-300" />
+              <div className="flex items-center gap-2 border border-gray-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-300">
+                <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center border border-emerald-100/50 dark:border-emerald-500/20 transition-colors duration-300">
+                  <Target className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+                </div>
+                %90'a Varan Doğruluk
+              </div>
             </motion.div>
           </motion.div>
         </div>

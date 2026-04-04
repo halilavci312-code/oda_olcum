@@ -1,26 +1,26 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Home, UploadCloud, Crown, LayoutDashboard, Zap, Activity, Clock, ChevronRight, Loader2 } from "lucide-react";
+import { UploadCloud, Image as ImageIcon, X, Clock, Settings, Maximize2 } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { GlowCard } from "@/components/spotlight-card";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
 interface DBMeasurement {
   id: string;
+  customer_name: string;
+  room_type: string;
+  photo_url: string;
   wall_width_cm: number;
   wall_height_cm: number;
-  reference_type: string;
   created_at: string;
 }
 
 export default function DashboardOverviewPage() {
   const [history, setHistory] = useState<DBMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [measurementCount, setMeasurementCount] = useState(0);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -28,16 +28,13 @@ export default function DashboardOverviewPage() {
       const user = sessionData.session?.user;
       if (!user) return;
       
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from("measurements")
-        .select("id, wall_width_cm, wall_height_cm, reference_type, created_at", { count: "exact" })
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(3);
+        .select("id, customer_name, room_type, photo_url, wall_width_cm, wall_height_cm, created_at")
+        .order("created_at", { ascending: false });
         
       if (!error && data) {
-        setHistory(data);
-        setMeasurementCount(count || 0);
+        setHistory(data as any);
       }
     } catch (e) {
       console.error(e);
@@ -51,181 +48,113 @@ export default function DashboardOverviewPage() {
   }, [loadData]);
 
   return (
-    <div className="flex flex-col gap-8 w-full">
+    <div className="flex flex-col gap-6 w-full">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
+      <div className="flex items-center justify-between border-b border-gray-200 dark:border-zinc-800 pb-5">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-[-0.02em]">Ana Panel</h1>
-          <p className="text-gray-500 mt-1">Tekrar hoş geldiniz, ölçümlerinize ve planınıza buradan göz atın.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">Müşteri Ölçümleri</h1>
+          <p className="text-gray-500 dark:text-zinc-400 mt-1">Sisteme yüklenen tüm fotoğraf ve ölçüm taleplerini görüntüleyin.</p>
         </div>
-        <Link href="/#fiyatlandirma" className="hidden sm:flex px-5 py-2.5 rounded-xl font-semibold text-[14px] items-center gap-2 text-white shadow-sm transition-all hover:scale-[1.03] active:scale-[0.97]"
-                style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
-          <Crown className="w-4 h-4" /> Pro'ya Yükselt
-        </Link>
-      </motion.div>
-
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[14px] font-semibold text-gray-900">Ölçüm Hakkı</span>
-            <Activity className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-gray-900 tracking-tighter">{measurementCount}</span>
-              <span className="text-gray-400 font-medium">/ 3</span>
-            </div>
-            <p className="text-[13px] text-gray-500 mt-2">Kullanılan ücretsiz ölçüm sayısı</p>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[14px] font-semibold text-gray-900">Mevcut Plan</span>
-            <Crown className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="mt-2">
-            <div className="text-3xl font-bold text-gray-900 tracking-tighter">Ücretsiz</div>
-            <p className="text-[13px] text-amber-600 font-medium mt-2 bg-amber-50 px-2 py-1 rounded inline-block">
-              Sınırlı Erişim
-            </p>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[14px] font-semibold text-gray-900">Profil Durumu</span>
-            <Zap className="w-4 h-4 text-teal-500" />
-          </div>
-          <div className="mt-2">
-            <div className="text-3xl font-bold text-gray-900 tracking-tighter">100%</div>
-            <p className="text-[13px] text-teal-600 font-medium mt-2 bg-teal-50 px-2 py-1 rounded inline-block">
-              Hesap kurulumu tamamlandı
-            </p>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/dashboard/olcum">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="h-full w-full"
-          >
-            <GlowCard customSize glowColor="blue" className="group bg-white border border-gray-200 hover:border-indigo-300 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col items-start relative overflow-hidden">
-              <div className="w-12 h-12 bg-gray-50 group-hover:bg-indigo-50 rounded-xl flex items-center justify-center border border-gray-100 mb-6 transition-colors">
-                <UploadCloud className="w-6 h-6 text-gray-700 group-hover:text-indigo-600 transition-colors" />
-              </div>
-              <h3 className="font-semibold text-gray-900 text-lg tracking-[-0.01em] mb-2">Akıllı Ölçüm Başlat</h3>
-              <p className="text-gray-500 text-[14px] font-light leading-relaxed">
-                Odanızın fotoğrafını yükleyin, yapay zeka ile santimetresine kadar gerçek dünya ölçülerini alın.
-              </p>
-            </GlowCard>
-          </motion.div>
-        </Link>
-
-        <Link href="/dashboard/esya-kaldir">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5 }}
-            className="h-full w-full"
-          >
-            <GlowCard customSize glowColor="green" className="group bg-white border border-gray-200 hover:border-teal-300 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col items-start relative overflow-hidden">
-              <div className="absolute top-4 right-4 bg-teal-50 text-teal-600 text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider z-20">
-                YENİ
-              </div>
-              <div className="w-12 h-12 bg-gray-50 group-hover:bg-teal-50 rounded-xl flex items-center justify-center border border-gray-100 mb-6 transition-colors relative z-10">
-                <LayoutDashboard className="w-6 h-6 text-gray-700 group-hover:text-teal-600 transition-colors" />
-              </div>
-              <h3 className="font-semibold text-gray-900 text-lg tracking-[-0.01em] mb-2 relative z-10">Eşya Kaldır (AI)</h3>
-              <p className="text-gray-500 text-[14px] font-light leading-relaxed relative z-10">
-                Dolu bir odanın fotoğrafını yükleyin, yapay zeka mekandaki tüm eşyaları silip size boş odayı sunsun.
-              </p>
-            </GlowCard>
-          </motion.div>
-        </Link>
-      </div>
-
-      {/* Recent Activity List */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="mt-6"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 tracking-[-0.01em]">Son Ölçümler</h2>
-          <Link href="/dashboard/olcum" className="text-[13px] font-medium text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-1 group">
-            Tümünü Gör <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        <div className="flex gap-3">
+          <Link href="/dashboard/olcum" className="flex px-4 py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 text-white rounded-lg font-medium text-sm transition-colors items-center gap-2 shadow-sm">
+            <UploadCloud className="w-4 h-4" /> Yeni Ölçüm Yükle
           </Link>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-          {loading ? (
-            <div className="p-12 text-center flex justify-center">
-              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-            </div>
-          ) : history.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                 <Clock className="w-6 h-6 text-gray-400" />
-              </div>
-              <h3 className="text-gray-900 font-semibold mb-1 tracking-[-0.01em]">Henüz ölçümünüz yok</h3>
-              <p className="text-gray-500 text-[14px]">İlk ölçümünüzü yapmak için Akıllı Ölçüm'ü başlatın.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {history.map((item) => (
-                <div key={item.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100">
-                      <Zap className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <p className="text-[15px] font-semibold text-gray-900">
-                        {item.wall_width_cm}cm x {item.wall_height_cm}cm Ölçümü
-                      </p>
-                      <p className="text-[12px] text-gray-400">
-                         {format(new Date(item.created_at), "d MMMM yyyy, HH:mm", { locale: tr })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="hidden sm:inline-block px-2.5 py-1 rounded-md bg-gray-100 text-gray-500 text-[11px] font-bold uppercase tracking-wider border border-gray-200">
-                      {item.reference_type === "aruco" ? "ArUco" : "A4"}
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-gray-300" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </motion.div>
+      </div>
 
+      {/* Spreadsheet / Data Table */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col transition-colors duration-300">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-gray-50/80 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400 font-medium transition-colors">
+              <tr>
+                <th className="px-6 py-4">Tarih</th>
+                <th className="px-6 py-4">Müşteri Adı</th>
+                <th className="px-6 py-4">Oda Tipi</th>
+                <th className="px-6 py-4">Ölçüler (G x Y)</th>
+                <th className="px-6 py-4">Fotoğraf</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/80 text-gray-700 dark:text-zinc-300">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-zinc-500">
+                    <div className="flex justify-center items-center gap-2">
+                      <Settings className="w-5 h-5 animate-spin text-gray-400 dark:text-zinc-600" />
+                      <span>Veriler Yükleniyor...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : history.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-14 h-14 bg-gray-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-3">
+                        <Clock className="w-6 h-6 text-gray-300 dark:text-zinc-600" />
+                      </div>
+                      <p className="text-gray-900 dark:text-zinc-200 font-medium">Kayıtlı Ölçüm Bulunamadı</p>
+                      <p className="text-gray-500 dark:text-zinc-500 text-sm mt-1">Yeni ölçüm talebi geldiğinde burada listelenecektir.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                history.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/50 transition-colors duration-200">
+                    <td className="px-6 py-4 text-gray-500 dark:text-zinc-400 text-[13px]">
+                      {format(new Date(item.created_at), "dd MMM yyyy, HH:mm", { locale: tr })}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-zinc-100">{item.customer_name || "-"}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 text-xs font-semibold">
+                        {item.room_type || "-"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-zinc-300">
+                      {item.wall_width_cm && item.wall_height_cm 
+                        ? <span className="font-medium text-slate-900 dark:text-zinc-100">{item.wall_width_cm}cm x {item.wall_height_cm}cm</span>
+                        : <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-400/10 px-2 py-1 rounded text-xs font-medium border border-amber-200 dark:border-amber-500/20">Fotoğraf Yüklendi (Ölçüm Bekliyor)</span>}
+                    </td>
+                    <td className="px-6 py-4">
+                      {item.photo_url ? (
+                        <button 
+                          onClick={() => setSelectedPhoto(item.photo_url)}
+                          className="w-12 h-10 rounded border border-gray-200 dark:border-zinc-700 overflow-hidden relative group shadow-sm bg-white dark:bg-zinc-800"
+                        >
+                          <img src={item.photo_url} alt="Room" className="w-full h-full object-cover group-hover:scale-110 transition-transform" crossOrigin="anonymous"/>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                             <Maximize2 className="w-4 h-4" />
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="w-12 h-10 rounded border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/80 flex items-center justify-center">
+                          <ImageIcon className="w-4 h-4 text-gray-300 dark:text-zinc-600" />
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Photo View Modal */}
+      {selectedPhoto && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setSelectedPhoto(null)}>
+          <div className="relative max-w-5xl w-full bg-white dark:bg-zinc-900 rounded-xl overflow-hidden shadow-2xl transition-colors duration-300" onClick={e => e.stopPropagation()}>
+            <div className="absolute top-4 right-4 z-10">
+              <button 
+                onClick={() => setSelectedPhoto(null)}
+                className="w-10 h-10 bg-black/50 hover:bg-black text-white rounded-full flex items-center justify-center transition-colors backdrop-blur shadow-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <img src={selectedPhoto} alt="Önizleme" className="w-full h-auto max-h-[85vh] object-contain bg-slate-100 dark:bg-zinc-950 shadow-inner" crossOrigin="anonymous"/>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { getSupabase } from "@/lib/supabase";
 import { Loader as Loader2, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function AuthModal({ children }: { children?: React.ReactNode }) {
+export function AuthModal({ children, redirectUrl = "/dashboard" }: { children?: React.ReactNode; redirectUrl?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -61,8 +61,7 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
       if (error) {
         setError(error.message === "Invalid login credentials" ? "E-posta veya şifre hatalı." : error.message);
       } else if (data.session) {
-        setSuccess("Giriş yapıldı! Yönlendiriliyorsunuz...");
-        setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
+        setTimeout(() => { window.location.href = redirectUrl; }, 1500);
       }
     } else {
       if (password.length < 6) { setError("Şifre en az 6 karakter olmalıdır."); setLoading(false); return; }
@@ -74,7 +73,7 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
       else if (!data.session) setSuccess("Kayıt başarılı! Lütfen e-postanıza gelen doğrulama linkine tıklayın.");
       else {
         setSuccess("Hesap oluşturuldu! Yönlendiriliyorsunuz...");
-        setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
+        setTimeout(() => { window.location.href = redirectUrl; }, 1500);
       }
     }
     setLoading(false);
@@ -91,14 +90,14 @@ export function AuthModal({ children }: { children?: React.ReactNode }) {
   if (hasSession) {
     if (children) {
       return (
-        <div onClick={() => { window.location.href = "/dashboard"; }} className="cursor-pointer">
+        <div onClick={() => { window.location.href = redirectUrl; }} className="cursor-pointer inline-block">
           {children}
         </div>
       );
     }
     return (
       <button
-        onClick={() => { window.location.href = "/dashboard"; }}
+        onClick={() => { window.location.href = redirectUrl; }}
         className="relative overflow-hidden px-5 py-2 rounded-full text-[13px] font-semibold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
         style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
       >

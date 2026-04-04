@@ -38,7 +38,7 @@ export function HowItWorks() {
   ];
 
   return (
-    <section id="nasil-calisir" className="w-full py-32 relative z-10 bg-white">
+    <section id="nasil-calisir" className="w-full py-32 relative z-10 bg-white dark:bg-zinc-950 transition-colors duration-300">
       <div className="container mx-auto px-4 md:px-6 max-w-6xl">
         {/* Section header */}
         <div className="text-center mb-20 space-y-5">
@@ -47,7 +47,7 @@ export function HowItWorks() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 backdrop-blur-sm shadow-sm text-[13px] font-medium text-gray-500"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 backdrop-blur-sm shadow-sm text-[13px] font-medium text-gray-500 dark:text-zinc-400 transition-colors duration-300"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
             Nasıl Çalışır
@@ -57,7 +57,7 @@ export function HowItWorks() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold tracking-[-0.03em] text-gray-900"
+            className="text-4xl md:text-5xl font-bold tracking-[-0.03em] text-gray-900 dark:text-zinc-100 transition-colors duration-300"
           >
             3 Basit Adımda Ölçüm
           </motion.h2>
@@ -66,7 +66,7 @@ export function HowItWorks() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="text-gray-500 text-lg max-w-xl mx-auto font-light"
+            className="text-gray-500 dark:text-zinc-400 text-lg max-w-xl mx-auto font-light transition-colors duration-300"
           >
             Herhangi bir ölçüm aleti veya teknik bilgiye gerek yok.
             <br />Telefonunuzun kamerası yeterli.
@@ -82,10 +82,10 @@ export function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 + index * 0.1 }}
               viewport={{ once: true }}
-              className={`group relative rounded-2xl p-8 border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-sm transition-all duration-500 ${step.border}`}
+              className={`group relative rounded-2xl p-8 border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:shadow-sm transition-all duration-500 ${step.border}`}
             >
               {/* Step number — ghost */}
-              <div className="absolute top-6 right-6 text-[80px] font-black text-gray-100 leading-none select-none">
+              <div className="absolute top-6 right-6 text-[80px] font-black text-gray-100 dark:text-zinc-800/50 leading-none select-none transition-colors duration-300">
                 {step.id}
               </div>
 
@@ -95,14 +95,14 @@ export function HowItWorks() {
               </div>
 
               {/* Content */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 tracking-[-0.01em]">{step.title}</h3>
-              <p className="text-gray-500 text-[14px] leading-relaxed font-light">{step.description}</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 mb-2 tracking-[-0.01em] transition-colors duration-300">{step.title}</h3>
+              <p className="text-gray-500 dark:text-zinc-400 text-[14px] leading-relaxed font-light transition-colors duration-300">{step.description}</p>
 
               {/* Arrow connector (hidden on last card) */}
               {index < 2 && (
                 <div className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-                  <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-                    <ArrowRight className="w-3 h-3 text-gray-400" />
+                  <div className="w-6 h-6 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 flex items-center justify-center shadow-sm transition-colors duration-300">
+                    <ArrowRight className="w-3 h-3 text-gray-400 dark:text-zinc-500" />
                   </div>
                 </div>
               )}
