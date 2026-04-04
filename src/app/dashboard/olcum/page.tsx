@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
-const API_URL = "http://187.124.14.208:8001/olc";
+const API_URL = "/api/olcum";
 const ZOOM = 3;
 const MAG_SIZE = 120;
 
