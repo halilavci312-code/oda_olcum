@@ -1,13 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const PYTHON_API_URL =
-  process.env.PYTHON_API_URL || "http://187.124.14.208:8001/olc";
+  process.env.PYTHON_API_URL || "http://204.168.227.113:9000/api/olcum";
 
 export async function POST(req: NextRequest) {
   console.log("[/api/olcum] Request received, Python API URL:", PYTHON_API_URL);
 
   try {
-    const formData = await req.formData();
+    const incoming = await req.formData();
+
+    // Python API'si "file" field adını bekliyor.
+    // Frontend "fotograf" olarak gönderiyor — burada dönüştürüyoruz.
+    const proxyFormData = new FormData();
+
+    const foto = incoming.get("fotograf") ?? incoming.get("file");
+    const koseler = incoming.get("duvar_koseler");
+
+    if (!foto) {
+      return NextResponse.json(
+        { hata: "Fotoğraf bulunamadı. Lütfen tekrar deneyin." },
+        { status: 400 }
+      );
+    }
+
+    proxyFormData.append("file", foto);
+
+    if (koseler) {
+      proxyFormData.append("duvar_koseler", koseler as string);
+    }
+
+    console.log("[/api/olcum] Forwarding to Python — foto:", typeof foto, "| koseler:", koseler);
 
     // AbortController ile 60 saniyelik timeout
     const controller = new AbortController();
@@ -17,7 +39,7 @@ export async function POST(req: NextRequest) {
     try {
       response = await fetch(PYTHON_API_URL, {
         method: "POST",
-        body: formData,
+        body: proxyFormData,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -42,9 +64,9 @@ export async function POST(req: NextRequest) {
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       const text = await response.text();
-      console.error("[/api/olcum] Non-JSON response:", text.substring(0, 200));
+      console.error("[/api/olcum] Non-JSON response:", text.substring(0, 300));
       return NextResponse.json(
-        { hata: `API beklenmedik yanıt döndürdü (${response.status}): ${text.substring(0, 100)}` },
+        { hata: `API beklenmedik yanıt döndürdü (${response.status}): ${text.substring(0, 150)}` },
         { status: 502 }
       );
     }
