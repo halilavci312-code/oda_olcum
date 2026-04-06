@@ -3,6 +3,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dxjktdxhuksqewjiatam.supabase.co",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4amt0ZHhodWtzcWV3amlhdGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTcxODMsImV4cCI6MjA5MDI5MzE4M30.OQMVvuwx4D2vWVyfjVKQgHMqsjVEPH5tgwMlAgbkKws",
+    PYTHON_API_URL: process.env.PYTHON_API_URL || "http://187.124.14.208:8001/olc",
   },
 };
 
