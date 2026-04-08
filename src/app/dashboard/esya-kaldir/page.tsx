@@ -3,7 +3,6 @@
 import { Upload, Camera, Sparkles, X, Loader2, ArrowRight, Plus, Minus } from "lucide-react";
 import { useState, useRef, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Folder from "@/components/Folder";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -303,17 +302,15 @@ export default function GorselYerlestirmePage() {
                   ) : (
                     <button
                       onClick={() => roomInputRef.current?.click()}
-                      className="w-full h-56 md:h-64 border-2 border-dashed border-gray-200 dark:border-zinc-700 rounded-2xl hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 bg-gray-50/50 dark:bg-zinc-950/50 group"
+                      className="w-full h-56 md:h-64 border border-gray-200 dark:border-zinc-700 rounded-2xl hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 bg-gray-50/50 dark:bg-zinc-950/50 group"
                       type="button"
                     >
-                      <div className="flex items-center justify-center relative translate-y-2 group-hover:translate-y-0 transition-transform">
-                        <Folder color="#6366f1" size={1.2} items={[
-                          <Camera size={14} className="text-gray-600 dark:text-zinc-400 absolute inset-0 m-auto" />, null, null
-                        ]} />
+                      <div className="w-14 h-14 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Camera size={22} className="text-indigo-500 dark:text-indigo-400" />
                       </div>
-                      <div className="text-center mt-2">
-                        <span className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 tracking-tight mb-1">Oda fotoğrafı seç</span>
-                        <span className="block text-xs text-gray-400 dark:text-zinc-500 font-medium">Sürükle bırak veya tıkla (JPG, PNG)</span>
+                      <div className="text-center">
+                        <span className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 tracking-tight mb-0.5">Oda fotoğrafı seç</span>
+                        <span className="block text-xs text-gray-400 dark:text-zinc-500">Sürükle bırak veya tıkla (JPG, PNG)</span>
                       </div>
                     </button>
                   )}
@@ -349,17 +346,15 @@ export default function GorselYerlestirmePage() {
                   ) : (
                     <button
                       onClick={() => productInputRef.current?.click()}
-                      className="w-full h-56 md:h-64 border-2 border-dashed border-gray-200 dark:border-zinc-700 rounded-2xl hover:border-teal-400 dark:hover:border-teal-500/50 hover:bg-teal-50/30 dark:hover:bg-teal-500/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 bg-gray-50/50 dark:bg-zinc-950/50 group"
+                      className="w-full h-56 md:h-64 border border-gray-200 dark:border-zinc-700 rounded-2xl hover:border-teal-400 dark:hover:border-teal-500/50 hover:bg-teal-50/30 dark:hover:bg-teal-500/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 bg-gray-50/50 dark:bg-zinc-950/50 group"
                       type="button"
                     >
-                      <div className="flex items-center justify-center relative translate-y-2 group-hover:translate-y-0 transition-transform">
-                        <Folder color="#14b8a6" size={1.2} items={[
-                          <Upload size={14} className="text-gray-600 dark:text-zinc-400 absolute inset-0 m-auto" />, null, null
-                        ]} />
+                      <div className="w-14 h-14 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-100 dark:border-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload size={22} className="text-teal-500 dark:text-teal-400" />
                       </div>
-                      <div className="text-center mt-2">
-                        <span className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 tracking-tight mb-1">Ürün görseli seç</span>
-                        <span className="block text-xs text-gray-400 dark:text-zinc-500 font-medium">Sürükle bırak veya tıkla (JPG, PNG、WEBP)</span>
+                      <div className="text-center">
+                        <span className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 tracking-tight mb-0.5">Ürün görseli seç</span>
+                        <span className="block text-xs text-gray-400 dark:text-zinc-500">Sürükle bırak veya tıkla (JPG, PNG, WEBP)</span>
                       </div>
                     </button>
                   )}
@@ -479,6 +474,134 @@ export default function GorselYerlestirmePage() {
               )}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ═══════ ÖN İZLEME (PREVIEW) SECTION ═══════ */}
+      <section className="mt-4 mb-16 w-full max-w-5xl mx-auto px-4">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-300 tracking-wide uppercase">Nasıl Çalışır?</span>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-zinc-100 mb-2 tracking-[-0.02em]">
+            Ön İzleme
+          </h3>
+          <p className="text-gray-500 dark:text-zinc-400 text-[14px] font-light max-w-lg mx-auto">
+            Oda fotoğrafınızı ve ürün fotoğrafınızı yükleyin, yapay zeka sizin için birleştirsin
+          </p>
+        </div>
+
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0">
+          {/* Box 1: Oda Fotoğrafı */}
+          <div className="group relative w-full md:w-[280px] flex-shrink-0">
+            <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-blue-500/30 via-indigo-500/20 to-purple-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[1px]" />
+            <div className="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 transition-all duration-300 group-hover:border-indigo-300 dark:group-hover:border-indigo-500/40 group-hover:shadow-[0_8px_30px_-6px_rgba(99,102,241,0.12)]">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+                  <Camera className="w-4.5 h-4.5 text-blue-500 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-gray-900 dark:text-zinc-100">Oda Fotoğrafı</p>
+                  <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-light">Odanızın görselini yükleyin</p>
+                </div>
+              </div>
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-850 border border-gray-100 dark:border-zinc-700/50">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-2 border border-blue-100 dark:border-blue-500/20">
+                      <Camera className="w-5 h-5 text-blue-400 dark:text-blue-300" />
+                    </div>
+                    <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-medium">Oda Görseli</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Arrow 1 */}
+          <div className="flex items-center justify-center w-12 md:w-16 flex-shrink-0 py-2 md:py-0">
+            <div className="hidden md:flex items-center">
+              <div className="w-8 h-[2px] bg-gradient-to-r from-blue-300 to-indigo-400 dark:from-blue-500/50 dark:to-indigo-500/50 rounded-full" />
+              <svg className="w-4 h-4 text-indigo-400 dark:text-indigo-400 -ml-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex md:hidden flex-col items-center">
+              <div className="h-6 w-[2px] bg-gradient-to-b from-blue-300 to-indigo-400 dark:from-blue-500/50 dark:to-indigo-500/50 rounded-full" />
+              <svg className="w-4 h-4 text-indigo-400 dark:text-indigo-400 -mt-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Box 2: Ürün Fotoğrafı */}
+          <div className="group relative w-full md:w-[280px] flex-shrink-0">
+            <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-purple-500/30 via-indigo-500/20 to-pink-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[1px]" />
+            <div className="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 transition-all duration-300 group-hover:border-purple-300 dark:group-hover:border-purple-500/40 group-hover:shadow-[0_8px_30px_-6px_rgba(147,51,234,0.12)]">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center border border-purple-100 dark:border-purple-500/20">
+                  <Upload className="w-4.5 h-4.5 text-purple-500 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-gray-900 dark:text-zinc-100">Ürün Fotoğrafı</p>
+                  <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-light">Mobilya görselini yükleyin</p>
+                </div>
+              </div>
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-850 border border-gray-100 dark:border-zinc-700/50">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mx-auto mb-2 border border-purple-100 dark:border-purple-500/20">
+                      <Upload className="w-5 h-5 text-purple-400 dark:text-purple-300" />
+                    </div>
+                    <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-medium">Ürün Görseli</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Arrow 2 */}
+          <div className="flex items-center justify-center w-12 md:w-16 flex-shrink-0 py-2 md:py-0">
+            <div className="hidden md:flex items-center">
+              <div className="w-8 h-[2px] bg-gradient-to-r from-purple-300 to-emerald-400 dark:from-purple-500/50 dark:to-emerald-500/50 rounded-full" />
+              <svg className="w-4 h-4 text-emerald-400 dark:text-emerald-400 -ml-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex md:hidden flex-col items-center">
+              <div className="h-6 w-[2px] bg-gradient-to-b from-purple-300 to-emerald-400 dark:from-purple-500/50 dark:to-emerald-500/50 rounded-full" />
+              <svg className="w-4 h-4 text-emerald-400 dark:text-emerald-400 -mt-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Box 3: Çıktı */}
+          <div className="group relative w-full md:w-[280px] flex-shrink-0">
+            <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-cyan-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[1px]" />
+            <div className="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 transition-all duration-300 group-hover:border-emerald-300 dark:group-hover:border-emerald-500/40 group-hover:shadow-[0_8px_30px_-6px_rgba(16,185,129,0.12)]">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/20">
+                  <Sparkles className="w-4.5 h-4.5 text-emerald-500 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-gray-900 dark:text-zinc-100">Çıktı</p>
+                  <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-light">AI tarafından oluşturulan sonuç</p>
+                </div>
+              </div>
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-850 border border-gray-100 dark:border-zinc-700/50">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-2 border border-emerald-100 dark:border-emerald-500/20">
+                      <Sparkles className="w-5 h-5 text-emerald-400 dark:text-emerald-300" />
+                    </div>
+                    <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-medium">AI Sonuç</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
