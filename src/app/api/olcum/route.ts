@@ -101,8 +101,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("[/api/olcum] Success:", JSON.stringify(data).substring(0, 100));
-    return NextResponse.json(data);
+    // ── Python API -> Frontend alan adı eşlemesi ──
+    // Python API: genislik_cm, yukseklik_cm, referans_nesne, pixels_per_cm
+    // Frontend: duvar_genislik_cm, duvar_yukseklik_cm, duvar_genislik_m, duvar_yukseklik_m, referans, aciklama, guven_skoru
+    const genislikCm = data.duvar_genislik_cm ?? data.genislik_cm ?? 0;
+    const yukseklikCm = data.duvar_yukseklik_cm ?? data.yukseklik_cm ?? 0;
+    const referans = data.referans ?? data.referans_nesne ?? "bilinmiyor";
+
+    const normalizedData = {
+      duvar_genislik_cm: Number(genislikCm),
+      duvar_yukseklik_cm: Number(yukseklikCm),
+      duvar_genislik_m: Number((genislikCm / 100).toFixed(2)),
+      duvar_yukseklik_m: Number((yukseklikCm / 100).toFixed(2)),
+      referans: referans,
+      aciklama: data.aciklama || `${referans === "a4_kagit" ? "A4 kağıt" : referans === "kredi_karti" ? "Kredi kartı" : "Referans nesne"} kullanılarak hesaplandı. PPC: ${data.pixels_per_cm || "N/A"}`,
+      guven_skoru: data.guven_skoru || (data.pixels_per_cm > 5 ? "yuksek" : data.pixels_per_cm > 2 ? "orta" : "dusuk"),
+    };
+
+    console.log("[/api/olcum] Success (normalized):", JSON.stringify(normalizedData).substring(0, 200));
+    return NextResponse.json(normalizedData);
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "API sunucusuna ulaşılamadı";
