@@ -601,11 +601,11 @@ export default function OlcumPage() {
                           <div className="flex flex-col justify-center">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-[11px] text-gray-400 dark:text-zinc-500 uppercase tracking-widest">En</span>
-                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">{item.wall_width_cm}cm</span>
+                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">{Number(item.wall_width_cm).toFixed(1)}cm</span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Boy</span>
-                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">{item.wall_height_cm}cm</span>
+                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">{Number(item.wall_height_cm).toFixed(1)}cm</span>
                             </div>
                           </div>
                         </div>
