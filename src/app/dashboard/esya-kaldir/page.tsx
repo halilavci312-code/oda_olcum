@@ -426,57 +426,6 @@ export default function GorselYerlestirmePage() {
         )}
       </AnimatePresence>
 
-      {/* SSS (FAQ) SECTION */}
-      <section className="mt-16 mb-12 w-full max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-zinc-100 mb-3 tracking-[-0.02em]">
-            Sıkça Sorulan Sorular
-          </h2>
-          <p className="text-gray-500 dark:text-zinc-400 text-[15px] font-light">
-            Yapay zeka destekli mobilya görselleştirme platformumuz hakkında bilmeniz gereken her şey
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className={`bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-300 overflow-hidden ${
-                openFaqIndex === index 
-                  ? "border-indigo-200 dark:border-indigo-500/50 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]" 
-                  : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 shadow-sm"
-              }`}
-            >
-              <button
-                onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
-                className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
-              >
-                <span className={`text-[15px] font-semibold pr-4 transition-colors ${openFaqIndex === index ? "text-indigo-900 dark:text-indigo-300" : "text-gray-900 dark:text-zinc-200"}`}>
-                  {faq.question}
-                </span>
-                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                  openFaqIndex === index ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" : "bg-gray-50 dark:bg-zinc-950 text-gray-400 dark:text-zinc-500 border border-gray-100 dark:border-zinc-800"
-                }`}>
-                  {openFaqIndex === index ? (
-                    <Minus size={18} />
-                  ) : (
-                    <Plus size={18} />
-                  )}
-                </div>
-              </button>
-
-              {openFaqIndex === index && (
-                <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-300">
-                  <p className="text-gray-600 dark:text-zinc-400 text-[14px] leading-relaxed font-light">
-                    {faq.answer}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ═══════ ÖN İZLEME (PREVIEW) SECTION ═══════ */}
       <section className="mt-4 mb-16 w-full max-w-5xl mx-auto px-4">
         <div className="text-center mb-10">
@@ -602,6 +551,57 @@ export default function GorselYerlestirmePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* SSS (FAQ) SECTION */}
+      <section className="mt-16 mb-12 w-full max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-zinc-100 mb-3 tracking-[-0.02em]">
+            Sıkça Sorulan Sorular
+          </h2>
+          <p className="text-gray-500 dark:text-zinc-400 text-[15px] font-light">
+            Yapay zeka destekli mobilya görselleştirme platformumuz hakkında bilmeniz gereken her şey
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {faqs.map((faq, index) => (
+            <div
+              key={index}
+              className={`bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-300 overflow-hidden ${
+                openFaqIndex === index 
+                  ? "border-indigo-200 dark:border-indigo-500/50 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]" 
+                  : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 shadow-sm"
+              }`}
+            >
+              <button
+                onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
+              >
+                <span className={`text-[15px] font-semibold pr-4 transition-colors ${openFaqIndex === index ? "text-indigo-900 dark:text-indigo-300" : "text-gray-900 dark:text-zinc-200"}`}>
+                  {faq.question}
+                </span>
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                  openFaqIndex === index ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" : "bg-gray-50 dark:bg-zinc-950 text-gray-400 dark:text-zinc-500 border border-gray-100 dark:border-zinc-800"
+                }`}>
+                  {openFaqIndex === index ? (
+                    <Minus size={18} />
+                  ) : (
+                    <Plus size={18} />
+                  )}
+                </div>
+              </button>
+
+              {openFaqIndex === index && (
+                <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-300">
+                  <p className="text-gray-600 dark:text-zinc-400 text-[14px] leading-relaxed font-light">
+                    {faq.answer}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
     </div>
