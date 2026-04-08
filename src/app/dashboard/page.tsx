@@ -227,19 +227,16 @@ export default function DashboardOverviewPage() {
             className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl flex flex-col gap-4 text-center transform transition-all duration-300 delay-100"
             onClick={e => e.stopPropagation()}
           >
-            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-2 ${deleteConfirmStep === 2 ? 'bg-rose-100 dark:bg-rose-500/20' : 'bg-amber-100 dark:bg-amber-500/20'}`}>
-              <AlertTriangle className={`w-8 h-8 ${deleteConfirmStep === 2 ? 'text-rose-600 dark:text-rose-500' : 'text-amber-600 dark:text-amber-500'} animate-pulse`} />
+            <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-rose-100 dark:bg-rose-500/20">
+              <AlertTriangle className="w-8 h-8 text-rose-600 dark:text-rose-500" />
             </div>
             
             <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-100 uppercase tracking-tight">
-              {deleteConfirmStep === 1 ? "Emin misiniz?" : "DİKKAT! Son Onay"}
+              Emin misiniz?
             </h3>
             
             <p className="text-gray-500 dark:text-zinc-400 text-[14px]">
-              {deleteConfirmStep === 1 
-                ? `${deleteItem.customer_name || "Bu"} müşterisine ait ölçüm kaydı ve fotoğrafı silmek üzeresiniz. Onaylıyor musunuz?`
-                : "Bu işlem geri alınamaz! Fotoğraf ve ölçüm verileri kalıcı olarak sistemden (Supabase'den) silinecektir. Silmek istediğinize ZİRVESİNE EMİN MİSİNİZ?"
-              }
+              Bu ölçüm kaydı ve fotoğrafı sistemden <b>kalıcı olarak</b> silinecektir. Onayla?
             </p>
 
             <div className="flex gap-3 mt-4">
@@ -252,23 +249,16 @@ export default function DashboardOverviewPage() {
               </button>
               
               <button 
-                onClick={() => {
-                  if (deleteConfirmStep === 1) setDeleteConfirmStep(2);
-                  else if (deleteConfirmStep === 2) handleDelete();
-                }}
+                onClick={() => handleDelete()}
                 disabled={isDeleting}
-                className={`flex-1 py-3 px-4 rounded-xl font-semibold text-[13px] text-white transition disabled:opacity-50 flex items-center justify-center gap-2 ${
-                  deleteConfirmStep === 1 
-                    ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" 
-                    : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
-                } shadow-lg`}
+                className="flex-1 py-3 px-4 rounded-xl font-semibold text-[13px] text-white transition disabled:opacity-50 flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 shadow-rose-600/20 shadow-lg"
               >
                 {isDeleting ? (
                   <Settings className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                {deleteConfirmStep === 1 ? "Evet, Sil" : "SİL!"}
+                Sil
               </button>
             </div>
           </div>
