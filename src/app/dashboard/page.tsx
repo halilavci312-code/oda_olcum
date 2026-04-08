@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { UploadCloud, Image as ImageIcon, X, Clock, Settings, Maximize2 } from "lucide-react";
+import { UploadCloud, Image as ImageIcon, X, Clock, Settings, Maximize2, Trash2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface DBMeasurement {
   id: string;
@@ -21,6 +22,11 @@ export default function DashboardOverviewPage() {
   const [history, setHistory] = useState<DBMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  
+  // Delete States
+  const [deleteItem, setDeleteItem] = useState<DBMeasurement | null>(null);
+  const [deleteConfirmStep, setDeleteConfirmStep] = useState<number>(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -46,6 +52,51 @@ export default function DashboardOverviewPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+    setIsDeleting(true);
+    try {
+      // 1. Önce resmi Supabase Storage'dan silmeye çalış
+      if (deleteItem.photo_url) {
+        // public URL'den dosya adını çeker
+        const urlParts = deleteItem.photo_url.split("/");
+        let fileName = urlParts[urlParts.length - 1];
+        // Bazen URL'de query param olabilir (?v=123)
+        fileName = fileName.split("?")[0];
+        
+        if (fileName) {
+          const { error: storageError } = await supabase.storage
+            .from("customer_photos")
+            .remove([fileName]);
+            
+          if (storageError) {
+            console.error("Storage delete error:", storageError);
+          }
+        }
+      }
+
+      // 2. Ardından DB'den Measurement kaydını sil
+      const { error: dbError } = await supabase
+        .from("measurements")
+        .delete()
+        .eq("id", deleteItem.id);
+
+      if (dbError) throw dbError;
+
+      // 3. UI'ı güncelle
+      setHistory(prev => prev.filter(item => item.id !== deleteItem.id));
+      toast.success("Kayıt ve fotoğraf tamamen silindi");
+      
+      setDeleteItem(null);
+      setDeleteConfirmStep(0);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Silinirken bir hata oluştu: " + (e.message || "Bilinmiyor"));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -73,12 +124,13 @@ export default function DashboardOverviewPage() {
                 <th className="px-6 py-4">Oda Tipi</th>
                 <th className="px-6 py-4">Ölçüler (G x Y)</th>
                 <th className="px-6 py-4">Fotoğraf</th>
+                <th className="px-6 py-4 text-right">İşlemler</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/80 text-gray-700 dark:text-zinc-300">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-zinc-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-zinc-500">
                     <div className="flex justify-center items-center gap-2">
                       <Settings className="w-5 h-5 animate-spin text-gray-400 dark:text-zinc-600" />
                       <span>Veriler Yükleniyor...</span>
@@ -87,7 +139,7 @@ export default function DashboardOverviewPage() {
                 </tr>
               ) : history.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center">
+                  <td colSpan={6} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-14 h-14 bg-gray-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-3">
                         <Clock className="w-6 h-6 text-gray-300 dark:text-zinc-600" />
@@ -131,6 +183,18 @@ export default function DashboardOverviewPage() {
                         </div>
                       )}
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => {
+                          setDeleteItem(item);
+                          setDeleteConfirmStep(1);
+                        }}
+                        className="p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-600 dark:text-zinc-500 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-100 dark:hover:border-rose-500/20"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -152,6 +216,61 @@ export default function DashboardOverviewPage() {
               </button>
             </div>
             <img src={selectedPhoto} alt="Önizleme" className="w-full h-auto max-h-[85vh] object-contain bg-slate-100 dark:bg-zinc-950 shadow-inner" crossOrigin="anonymous"/>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteItem && deleteConfirmStep > 0 && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div 
+            className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl flex flex-col gap-4 text-center transform transition-all duration-300 delay-100"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-2 ${deleteConfirmStep === 2 ? 'bg-rose-100 dark:bg-rose-500/20' : 'bg-amber-100 dark:bg-amber-500/20'}`}>
+              <AlertTriangle className={`w-8 h-8 ${deleteConfirmStep === 2 ? 'text-rose-600 dark:text-rose-500' : 'text-amber-600 dark:text-amber-500'} animate-pulse`} />
+            </div>
+            
+            <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-100 uppercase tracking-tight">
+              {deleteConfirmStep === 1 ? "Emin misiniz?" : "DİKKAT! Son Onay"}
+            </h3>
+            
+            <p className="text-gray-500 dark:text-zinc-400 text-[14px]">
+              {deleteConfirmStep === 1 
+                ? `${deleteItem.customer_name || "Bu"} müşterisine ait ölçüm kaydı ve fotoğrafı silmek üzeresiniz. Onaylıyor musunuz?`
+                : "Bu işlem geri alınamaz! Fotoğraf ve ölçüm verileri kalıcı olarak sistemden (Supabase'den) silinecektir. Silmek istediğinize ZİRVESİNE EMİN MİSİNİZ?"
+              }
+            </p>
+
+            <div className="flex gap-3 mt-4">
+              <button 
+                onClick={() => { setDeleteItem(null); setDeleteConfirmStep(0); }}
+                disabled={isDeleting}
+                className="flex-1 py-3 px-4 rounded-xl font-semibold text-[13px] bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition disabled:opacity-50"
+              >
+                İptal Et
+              </button>
+              
+              <button 
+                onClick={() => {
+                  if (deleteConfirmStep === 1) setDeleteConfirmStep(2);
+                  else if (deleteConfirmStep === 2) handleDelete();
+                }}
+                disabled={isDeleting}
+                className={`flex-1 py-3 px-4 rounded-xl font-semibold text-[13px] text-white transition disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  deleteConfirmStep === 1 
+                    ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" 
+                    : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
+                } shadow-lg`}
+              >
+                {isDeleting ? (
+                  <Settings className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                {deleteConfirmStep === 1 ? "Evet, Sil" : "SİL!"}
+              </button>
+            </div>
           </div>
         </div>
       )}

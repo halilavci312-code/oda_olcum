@@ -7,7 +7,7 @@ user = 'root'
 password = r"c7?VPhjuYt'IyduJ,P+J"
 
 # Yerel dosyayı oku ve base64'e çevir
-with open('main_v5.py', 'rb') as f:
+with open('main_v6.py', 'rb') as f:
     content = f.read()
     
 b64_content = base64.b64encode(content).decode('ascii')
