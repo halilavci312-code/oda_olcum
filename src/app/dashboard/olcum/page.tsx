@@ -316,7 +316,19 @@ export default function OlcumPage() {
     try {
       const res = await fetch(API_URL, { method: "POST", body: formData });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.hata || data.cozum || "Bilinmeyen hata");
+
+      // Hem HTTP hata kodlarını hem de mantıksal hataları yakala
+      if (!res.ok || data.durum === "hata") {
+        const errorMsg = data.hata || data.mesaj || "Bilinmeyen hata";
+        const solutionMsg = data.cozum ? `\n${data.cozum}` : "";
+        throw new Error(`${errorMsg}${solutionMsg}`);
+      }
+
+      // Sonuç değerlerinin gerçekten dolu olduğunu kontrol et
+      if (!data.duvar_genislik_cm && !data.duvar_yukseklik_cm) {
+        throw new Error("Ölçüm değerleri alınamadı. Lütfen fotoğrafta referans nesne olduğundan emin olun.");
+      }
+
       setResult(data);
       setStep("result");
       

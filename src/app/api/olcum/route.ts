@@ -92,6 +92,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(data, { status: response.status });
     }
 
+    // Python API bazen HTTP 200 ile hata döndürüyor (durum: "hata")
+    if (data.durum === "hata") {
+      console.error("[/api/olcum] Python API returned logical error:", data.mesaj);
+      return NextResponse.json(
+        { hata: data.mesaj || "Ölçüm yapılamadı", cozum: data.cozum || "Lütfen tekrar deneyin." },
+        { status: 422 }
+      );
+    }
+
     console.log("[/api/olcum] Success:", JSON.stringify(data).substring(0, 100));
     return NextResponse.json(data);
   } catch (err: unknown) {
