@@ -7,9 +7,9 @@ export function HowItWorks() {
   const steps = [
     {
       id: 1,
-      title: "Fotoğraf Çekin",
+      title: "Odanızı Fotoğraflayın",
       description:
-        "Ölçmek istediğiniz alanın fotoğrafını çekin. Sahneye bir A4 kağıdı veya ArUco marker yerleştirin.",
+        "Telefonunuzla odanın geniş açı fotoğrafını çekin. Boyut tespiti için zemine bir A4 kağıdı veya kredi kartı bırakabilirsiniz.",
       icon: <Camera className="w-6 h-6" />,
       color: "from-violet-500/20 to-indigo-500/20",
       iconBg: "bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20",
@@ -17,9 +17,9 @@ export function HowItWorks() {
     },
     {
       id: 2,
-      title: "Köşeleri Seçin",
+      title: "Yapay Zeka ile Analiz",
       description:
-        "Sisteme yükleyin ve sadece 4 nokta tıklayarak duvar veya mobilyanın köşelerini işaretleyin.",
+        "Fotoğrafı yüklediğinizde, sistemimiz referans nesneyi otomatik tanır ve odanızın tüm boyutlarını saniyeler içinde hesaplar.",
       icon: <MousePointerClick className="w-6 h-6" />,
       color: "from-teal-500/20 to-emerald-500/20",
       iconBg: "bg-teal-500/10 text-teal-400 group-hover:bg-teal-500/20",
@@ -27,9 +27,9 @@ export function HowItWorks() {
     },
     {
       id: 3,
-      title: "Sonucu Alın",
+      title: "Evinizde Görselleştirin",
       description:
-        "Yapay zeka milimetrik hassasiyetle referans nesneyi kullanarak gerçek boyutları hesaplar.",
+        "Kesin ölçüler çıkarıldıktan sonra, hayalinizdeki mobilyayı veya objeyi kendi odanıza gerçek boyutlarıyla sanal olarak yerleştirin.",
       icon: <Ruler className="w-6 h-6" />,
       color: "from-amber-500/20 to-orange-500/20",
       iconBg: "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20",
@@ -59,7 +59,7 @@ export function HowItWorks() {
             viewport={{ once: true }}
             className="text-4xl md:text-5xl font-bold tracking-[-0.03em] text-gray-900 dark:text-zinc-100 transition-colors duration-300"
           >
-            3 Basit Adımda Ölçüm
+            Ölçüm ve Görselleştirme
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -68,8 +68,7 @@ export function HowItWorks() {
             viewport={{ once: true }}
             className="text-gray-500 dark:text-zinc-400 text-lg max-w-xl mx-auto font-light transition-colors duration-300"
           >
-            Herhangi bir ölçüm aleti veya teknik bilgiye gerek yok.
-            <br />Telefonunuzun kamerası yeterli.
+            Odalarınızı saniyeler içinde analiz edin ve eşyalarınızın nasıl duracağını önceden görün.
           </motion.p>
         </div>
 
