@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Zap, ShieldCheck, Target, Infinity as InfinityIcon } from "lucide-react";
 import { AuthModal } from "@/components/auth-modal";
+import { PreviewSteps } from "./preview-steps";
 
 function FloatingPaths({ position }: { position: number }) {
   const paths = Array.from({ length: 36 }, (_, i) => ({
@@ -169,6 +170,9 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
                 %90'a Varan Doğruluk
               </div>
             </motion.div>
+
+            {/* Preview Design Section */}
+            <PreviewSteps />
           </motion.div>
         </div>
       </div>
