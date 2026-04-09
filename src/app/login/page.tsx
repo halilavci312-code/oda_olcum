@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
       if (loginError) throw loginError;
 
       // Başarılı girişte Dashboard'a yönlendir
-      router.push("/admin/dashboard");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.");
     } finally {
