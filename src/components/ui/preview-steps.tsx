@@ -58,7 +58,7 @@ export function PreviewSteps() {
               </div>
             </div>
             <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-700 to-gray-400 relative">
-              <img src="/urun_fotografi_2.jpg" alt="Ürün Görseli" className="w-full h-full object-cover" />
+              <img src="/foto.jpg" alt="Ürün Görseli" className="w-full h-full object-cover" />
             </div>
           </div>
 
@@ -79,7 +79,7 @@ export function PreviewSteps() {
               </div>
             </div>
             <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-500 to-gray-200 relative">
-              <img src="/cikti_3.jpg" alt="Çıktı Görseli" className="w-full h-full object-cover" />
+              <img src="/cıktı.jpg" alt="Çıktı Görseli" className="w-full h-full object-cover" />
             </div>
           </div>
 

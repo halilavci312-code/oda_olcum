@@ -498,7 +498,7 @@ export default function GorselYerlestirmePage() {
                 </div>
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-850 border border-gray-100 dark:border-zinc-700/50">
-                <img src="/urun_fotografi_2.jpg" alt="Ürün Görseli" className="w-full h-full object-cover" />
+                <img src="/foto.jpg" alt="Ürün Görseli" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
@@ -533,7 +533,7 @@ export default function GorselYerlestirmePage() {
                 </div>
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-850 border border-gray-100 dark:border-zinc-700/50">
-                <img src="/cikti_3.jpg" alt="Çıktı Görseli" className="w-full h-full object-cover" />
+                <img src="/cıktı.jpg" alt="Çıktı Görseli" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
