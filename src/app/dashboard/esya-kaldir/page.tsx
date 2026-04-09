@@ -498,14 +498,7 @@ export default function GorselYerlestirmePage() {
                 </div>
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-850 border border-gray-100 dark:border-zinc-700/50">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mx-auto mb-2 border border-purple-100 dark:border-purple-500/20">
-                      <Upload className="w-5 h-5 text-purple-400 dark:text-purple-300" />
-                    </div>
-                    <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-medium">Ürün Görseli</p>
-                  </div>
-                </div>
+                <img src="/urun_fotografi_2.jpg" alt="Ürün Görseli" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
