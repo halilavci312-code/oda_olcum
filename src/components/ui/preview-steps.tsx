@@ -36,11 +36,8 @@ export function PreviewSteps() {
                 <p className="text-gray-500 text-[11px]">Odanızın görselini yükleyin</p>
               </div>
             </div>
-            <div className="w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-gray-600 to-gray-300 flex flex-col items-center justify-center gap-2 relative overflow-hidden group">
-              <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-sm flex items-center justify-center">
-                <Camera className="w-5 h-5 text-black/50" />
-              </div>
-              <span className="text-black/50 font-medium text-xs">Oda Görseli</span>
+            <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-600 to-gray-300 relative group">
+              <img src="/yeni_oda_fotografi.jpg" alt="Oda Görseli" className="w-full h-full object-cover" />
             </div>
           </div>
 
@@ -60,11 +57,8 @@ export function PreviewSteps() {
                 <p className="text-gray-500 text-[11px]">Mobilya görselini yükleyin</p>
               </div>
             </div>
-            <div className="w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-gray-700 to-gray-400 flex flex-col items-center justify-center gap-2 relative overflow-hidden">
-              <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-sm flex items-center justify-center">
-                <Upload className="w-5 h-5 text-black/50" />
-              </div>
-              <span className="text-black/50 font-medium text-xs">Ürün Görseli</span>
+            <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-700 to-gray-400 relative">
+              <img src="/urun_fotografi_2.jpg" alt="Ürün Görseli" className="w-full h-full object-cover" />
             </div>
           </div>
 
