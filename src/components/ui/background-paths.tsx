@@ -116,18 +116,27 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
               <span className="text-gray-900 dark:text-zinc-100 font-medium transition-colors duration-300">duvar boyutlarınızı</span> saniyeler içinde hesaplasın.
             </motion.p>
 
-            {/* CTA Button — Vercel style (Inverted for light theme) */}
+            {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.5, duration: 0.8 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
               <AuthModal redirectUrl="/dashboard/olcum">
                 <button
-                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black font-semibold text-[15px] transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="group inline-flex w-full sm:w-auto items-center justify-center gap-3 px-8 py-4 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black font-semibold text-[15px] transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  Hemen Ölçüme Başla
+                  Hemen Ölçüm Yap
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </button>
+              </AuthModal>
+              <AuthModal redirectUrl="/dashboard">
+                <button
+                  className="group inline-flex w-full sm:w-auto items-center justify-center gap-3 px-8 py-4 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white font-semibold text-[15px] transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Evinizde Görselleştir
+                  <Zap className="w-4 h-4 text-indigo-500 transition-transform duration-300 group-hover:scale-110" />
                 </button>
               </AuthModal>
             </motion.div>

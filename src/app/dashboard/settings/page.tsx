@@ -2,10 +2,9 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { CheckCircle2, User as UserIcon, Mail, ShieldCheck, CreditCard } from "lucide-react";
+import { CheckCircle2, User as UserIcon, Mail, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import Link from "next/link";
 
 export default function SettingsPage() {
   const [email, setEmail] = useState("");
@@ -34,7 +33,7 @@ export default function SettingsPage() {
         <p className="text-gray-500 dark:text-zinc-400 mt-1">Hesap bilgilerinizi ve faturalandırma ayarlarınızı yönetin.</p>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="max-w-2xl">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -70,7 +69,7 @@ export default function SettingsPage() {
                </label>
                <div className="px-4 py-3 border border-gray-100 dark:border-zinc-800 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-xl text-[14px] font-medium flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                 Aktif - Ücretsiz Plan
+                 Aktif
                </div>
             </div>
 
@@ -80,36 +79,6 @@ export default function SettingsPage() {
             >
               Değişiklikleri Kaydet
             </button>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl shadow-sm p-8 transition-colors"
-        >
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center border border-amber-100 dark:border-amber-500/20">
-               <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">Üyelik ve Ödeme</h3>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">Ölçüm limitlerinizi yükseltin</p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-gray-50 dark:bg-zinc-950 border border-gray-100 dark:border-zinc-800">
-            <h4 className="font-bold text-gray-900 dark:text-zinc-100 mb-2">Pro Plan'ı Keşfedin</h4>
-            <p className="text-[13px] text-gray-500 dark:text-zinc-400 leading-relaxed mb-6">
-              Sınırsız ölçüm hakkı, ArUco desteği ve özel AI modelleri için Pro pakete geçiş yapabilirsiniz.
-            </p>
-            <Link 
-              href="/#fiyatlandirma"
-              className="w-full flex items-center justify-center px-4 py-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl text-[14px] font-bold text-gray-900 dark:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all shadow-sm"
-            >
-              Planları Görüntüle
-            </Link>
           </div>
         </motion.div>
       </div>

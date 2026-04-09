@@ -42,7 +42,7 @@ export default function Home() {
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────── */}
-      <BackgroundPaths title="Yapay Zeka ile Pratik Duvar Ölçümü" />
+      <BackgroundPaths title="Mekanınızı Ölçün ve Evinizde Görün" />
 
       {/* ── How it Works ───────────────────────────────────── */}
       <HowItWorks />
