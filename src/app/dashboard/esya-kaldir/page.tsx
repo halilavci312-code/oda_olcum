@@ -533,14 +533,7 @@ export default function GorselYerlestirmePage() {
                 </div>
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-850 border border-gray-100 dark:border-zinc-700/50">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-2 border border-emerald-100 dark:border-emerald-500/20">
-                      <Sparkles className="w-5 h-5 text-emerald-400 dark:text-emerald-300" />
-                    </div>
-                    <p className="text-[11px] text-gray-400 dark:text-zinc-500 font-medium">AI Sonuç</p>
-                  </div>
-                </div>
+                <img src="/cikti_3.jpg" alt="Çıktı Görseli" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>

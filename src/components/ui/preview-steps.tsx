@@ -78,11 +78,8 @@ export function PreviewSteps() {
                 <p className="text-gray-500 text-[11px]">AI tarafından oluşturulan sonuç</p>
               </div>
             </div>
-            <div className="w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-gray-500 to-gray-200 flex flex-col items-center justify-center gap-2 relative overflow-hidden">
-              <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-sm flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-black/50" />
-              </div>
-              <span className="text-black/50 font-medium text-xs">AI Sonuç</span>
+            <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-500 to-gray-200 relative">
+              <img src="/cikti_3.jpg" alt="Çıktı Görseli" className="w-full h-full object-cover" />
             </div>
           </div>
 
