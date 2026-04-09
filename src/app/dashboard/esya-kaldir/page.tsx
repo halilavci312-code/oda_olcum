@@ -136,9 +136,8 @@ export default function GorselYerlestirmePage() {
         uploadFile(productImage)
       ]);
 
-      // 2. n8n Webhook'una İstek Gönder
-      const webhookUrl = "https://n8n.halilavc.com/webhook-test/odanda-gor";
-      const response = await fetch(webhookUrl, {
+      // 2. n8n Webhook'una Proxy Üzerinden İstek Gönder (CORS sorunu yaşamamak için)
+      const response = await fetch("/api/gorsel-yerlestir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -152,25 +151,33 @@ export default function GorselYerlestirmePage() {
       }
 
       const resultText = await response.text();
-      let n8nData: any = {};
+      console.log("n8n ham yanıt:", resultText);
       
+      let n8nData: any = {};
       try {
-        n8nData = JSON.parse(resultText);
+        if (resultText.trim()) {
+          n8nData = JSON.parse(resultText);
+        } else {
+          // n8n boş body döndürdü — workflow "Respond to Webhook" node eksik veya yanlış
+          console.warn("n8n boş yanıt döndürdü. Workflow'da 'Respond to Webhook' node'u kontrol et.");
+          toast.error("n8n workflow'u yanıt döndürmedi. Lütfen n8n'deki 'Respond to Webhook' node'unu kontrol edin.");
+          setIsLoading(false);
+          return;
+        }
       } catch(e) {
         console.warn("n8n yanıtı JSON değil:", resultText);
       }
 
-      // 3. n8n'den dönen sonuc_fotograf formatını al
+      // n8n'den dönen sonuc_fotograf formatını al
       const finalImageUrl = n8nData?.sonuc_fotograf;
       
       if (finalImageUrl && typeof finalImageUrl === "string" && finalImageUrl.startsWith("http")) {
         setResultImage(finalImageUrl);
         toast.success("Fotoğraf başarıyla oluşturuldu!");
       } else {
-        console.warn("n8n başarılı ancak beklenen 'sonuc_fotograf' anahtarı bulunamadı:", n8nData);
-        toast.success("n8n süreci tetiklendi ancak sonuç formatı beklenenden farklı.");
-        // Geri bildirim çalışmazsa fallback
-        setResultImage(odaResimUrl);
+        const keys = Object.keys(n8nData).join(", ");
+        console.warn("n8n'den beklenen 'sonuc_fotograf' anahtarı yok. Dönen anahtarlar:", keys || "(boş)");
+        toast.error(`n8n'den 'sonuc_fotograf' anahtarı gelmedi. Dönen veri: ${JSON.stringify(n8nData).substring(0, 200)}`);
       }
     } catch (err: any) {
       console.error(err);
