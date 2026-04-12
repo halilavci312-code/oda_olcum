@@ -147,7 +147,14 @@ export default function GorselYerlestirmePage() {
       });
 
       if (!response.ok) {
-         throw new Error(`n8n sunucusu geçersiz yanıt verdi: ${response.status}`);
+        let errorDetail = "";
+        try {
+          const errorData = await response.json();
+          errorDetail = errorData.detail || errorData.error || "";
+        } catch (e) {
+          errorDetail = "Bağlantı veya sunucu hatası.";
+        }
+        throw new Error(`n8n hatası (${response.status}): ${errorDetail}`);
       }
 
       const resultText = await response.text();

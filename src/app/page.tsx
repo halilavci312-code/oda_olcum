@@ -1,6 +1,6 @@
 import { BackgroundPaths } from "@/components/ui/background-paths";
 import { HowItWorks } from "@/components/how-it-works";
-import { AuthModal } from "@/components/auth-modal";
+// import { AuthModal } from "@/components/auth-modal"; // temporarily disabled
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,10 @@ export default function Home() {
           {/* Actions */}
           <div className="flex items-center gap-2 md:gap-4">
             <ThemeToggle />
-            <AuthModal />
+            {/* <AuthModal /> - Temporarily Disabled */}
+            <a href="/dashboard" className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors">
+              Hemen Başla
+            </a>
           </div>
         </div>
         {/* Bottom border */}

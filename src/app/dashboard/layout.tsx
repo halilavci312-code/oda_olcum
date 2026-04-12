@@ -23,6 +23,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setMounted(true);
+    // TEMPORARILY DISABLED AUTH CHECK
+    setUser({ email: "Misafir Kullanıcı (Giriş Devre Dışı)", id: "guest-id" } as any);
+    setAuthLoading(false);
+    
+    // Auth logic temporarily commented out:
+    /*
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         window.location.href = "/";
@@ -31,6 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setAuthLoading(false);
       }
     });
+    */
   }, []);
 
   if (authLoading) {
