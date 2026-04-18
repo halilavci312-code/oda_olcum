@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "sonner";
+import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -22,11 +23,28 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
+      <head>
+        <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
+      </head>
       <body className={`${inter.variable} antialiased min-h-screen bg-background text-foreground transition-colors duration-300`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           {children}
           <Toaster position="bottom-right" richColors />
         </ThemeProvider>
+
+        <Script
+          id="n8n-chat-script"
+          type="module"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `
+              import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+              createChat({
+                webhookUrl: 'https://n8n.halilavc.com/webhook/oda-olcum-chatbot/chat'
+              });
+            `,
+          }}
+        />
       </body>
     </html>
   );
