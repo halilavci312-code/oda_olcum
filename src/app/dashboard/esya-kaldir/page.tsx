@@ -46,7 +46,7 @@ const store = {
 export default function GorselYerlestirmePage() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const { roomImage, productImage, roomPreview, productPreview, isLoading, resultImage, selectedColor, selectedFabric } = state;
-  
+
   const setRoomImage = (file: File | null) => store.setState({ roomImage: file });
   const setProductImage = (file: File | null) => store.setState({ productImage: file });
   const setRoomPreview = (s: string | null) => store.setState({ roomPreview: s });
@@ -57,19 +57,19 @@ export default function GorselYerlestirmePage() {
   const setSelectedFabric = (s: string) => store.setState({ selectedFabric: s });
 
   const colors = [
-    { id: "orijinal", name: "Orijinal",     hex: "linear-gradient(135deg,#e5e7eb,#d1d5db)", border: "#9ca3af" },
-    { id: "bej",      name: "Bej / Krem",    hex: "#D4B896",                                  border: "#C4A67A" },
-    { id: "antrasit", name: "Antrasit Gri",  hex: "#3B3B3B",                                  border: "#555555" },
-    { id: "kiremit",  name: "Kiremit / Taba",hex: "#B5651D",                                  border: "#8B4513" },
-    { id: "zumrut",   name: "Zümrüt Yeşili", hex: "#046307",                                  border: "#2E8B57" }
+    { id: "orijinal", name: "Orijinal", hex: "linear-gradient(135deg,#e5e7eb,#d1d5db)", border: "#9ca3af" },
+    { id: "bej", name: "Bej / Krem", hex: "#D4B896", border: "#C4A67A" },
+    { id: "antrasit", name: "Antrasit Gri", hex: "#3B3B3B", border: "#555555" },
+    { id: "kiremit", name: "Kiremit / Taba", hex: "#B5651D", border: "#8B4513" },
+    { id: "zumrut", name: "Zümrüt Yeşili", hex: "#046307", border: "#2E8B57" }
   ];
 
   const fabrics = [
-    { id: "orijinal", name: "Orijinal", icon: "✦",  desc: "Değişiklik yok" },
-    { id: "kadife",   name: "Kadife",   icon: "🧶", desc: "Yumuşak & zarif" },
-    { id: "keten",    name: "Keten",    icon: "🌾", desc: "Doğal dokulu" },
-    { id: "deri",     name: "Deri",     icon: "🪶", desc: "Premium deri" },
-    { id: "sonil",    name: "Şönil",    icon: "🧵", desc: "Peluş & konforlu" }
+    { id: "orijinal", name: "Orijinal", icon: "✦", desc: "Değişiklik yok" },
+    { id: "kadife", name: "Kadife", icon: "🧶", desc: "Yumuşak & zarif" },
+    { id: "keten", name: "Keten", icon: "🌾", desc: "Doğal dokulu" },
+    { id: "deri", name: "Deri", icon: "🪶", desc: "Premium deri" },
+    { id: "sonil", name: "Şönil", icon: "🧵", desc: "Peluş & konforlu" }
   ];
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
@@ -131,7 +131,7 @@ export default function GorselYerlestirmePage() {
   const uploadFile = async (file: File): Promise<string> => {
     const fileExt = file.name.split(".").pop();
     const fileName = `giy_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-    
+
     // "evimde_gor_medya" bucket'ına yüklüyoruz
     const { error: uploadError } = await supabase.storage
       .from("evimde_gor_medya")
@@ -150,7 +150,7 @@ export default function GorselYerlestirmePage() {
     if (!roomImage || !productImage) return;
     setIsLoading(true);
     setResultImage(null);
-    
+
     try {
       // 1. Odayı ve Koltuğu Supabase'e Yükle
       const [odaResimUrl, urunResimUrl] = await Promise.all([
@@ -211,7 +211,7 @@ export default function GorselYerlestirmePage() {
       if (!isCompleted) {
         throw new Error("İşlem zaman aşımına uğradı (120s).");
       }
-      
+
       if (finalImageUrl) {
         setResultImage(finalImageUrl);
         toast.success("Fotoğraf başarıyla oluşturuldu!");
@@ -230,28 +230,28 @@ export default function GorselYerlestirmePage() {
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
       <header className="text-center mb-10 w-full flex flex-col items-center">
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 0.6 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm text-[13px] font-medium text-indigo-700 dark:text-indigo-400 mb-6 transition-colors"
         >
           <Sparkles className="w-3.5 h-3.5" />
           Yapay Zeka Destekli Görselleştirme
         </motion.div>
-        
+
         <motion.h1
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 0.6, delay: 0.1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
           className="text-4xl md:text-5xl font-bold tracking-[-0.03em] mb-4 text-gray-900 dark:text-zinc-100"
         >
           Evinde Gör <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-teal-500">AI</span>
         </motion.h1>
-        
+
         <motion.p
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 0.6, delay: 0.2 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
           className="text-gray-500 dark:text-zinc-400 text-lg max-w-2xl mx-auto font-light leading-relaxed"
         >
           Odanızın fotoğrafını çekin, kataloğumuzdan beğendiğiniz ürünü seçin. Yapay zekamız o mobilyayı saniyeler içinde odanıza yerleştirsin.
@@ -321,7 +321,7 @@ export default function GorselYerlestirmePage() {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Oda Fotoğrafı</span>
                   </div>
-                  
+
                   <input
                     ref={roomInputRef}
                     type="file"
@@ -365,7 +365,7 @@ export default function GorselYerlestirmePage() {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Ürün Görseli</span>
                   </div>
-                  
+
                   <input
                     ref={productInputRef}
                     type="file"
@@ -422,30 +422,26 @@ export default function GorselYerlestirmePage() {
                       key={c.id}
                       type="button"
                       onClick={() => setSelectedColor(c.id)}
-                      className={`group relative flex flex-col items-center gap-1.5 transition-all duration-200 ${
-                        selectedColor === c.id ? "scale-110" : "hover:scale-105"
-                      }`}
+                      className={`group relative flex flex-col items-center gap-1.5 transition-all duration-200 ${selectedColor === c.id ? "scale-110" : "hover:scale-105"
+                        }`}
                       title={c.name}
                     >
                       <div
-                        className={`w-10 h-10 rounded-full shadow-md transition-all duration-200 flex items-center justify-center ${
-                          selectedColor === c.id
+                        className={`w-10 h-10 rounded-full shadow-md transition-all duration-200 flex items-center justify-center ${selectedColor === c.id
                             ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900 ring-indigo-500 shadow-lg"
                             : "ring-1 ring-gray-200 dark:ring-zinc-700 hover:ring-gray-300 dark:hover:ring-zinc-600"
-                        }`}
+                          }`}
                         style={{ background: c.hex }}
                       >
                         {selectedColor === c.id && (
-                          <Check size={16} className={`${
-                            c.id === "antrasit" || c.id === "zumrut" ? "text-white" : "text-gray-700"
-                          } drop-shadow-sm`} strokeWidth={3} />
+                          <Check size={16} className={`${c.id === "antrasit" || c.id === "zumrut" ? "text-white" : "text-gray-700"
+                            } drop-shadow-sm`} strokeWidth={3} />
                         )}
                       </div>
-                      <span className={`text-[10px] font-medium transition-colors ${
-                        selectedColor === c.id
+                      <span className={`text-[10px] font-medium transition-colors ${selectedColor === c.id
                           ? "text-indigo-600 dark:text-indigo-400"
                           : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300"
-                      }`}>
+                        }`}>
                         {c.name}
                       </span>
                     </button>
@@ -470,27 +466,24 @@ export default function GorselYerlestirmePage() {
                       key={f.id}
                       type="button"
                       onClick={() => setSelectedFabric(f.id)}
-                      className={`relative px-4 py-3 rounded-xl border text-left transition-all duration-200 group ${
-                        selectedFabric === f.id
+                      className={`relative px-4 py-3 rounded-xl border text-left transition-all duration-200 group ${selectedFabric === f.id
                           ? "border-teal-400 dark:border-teal-500/60 bg-teal-50/60 dark:bg-teal-500/10 shadow-sm ring-1 ring-teal-200 dark:ring-teal-500/30"
                           : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-gray-300 dark:hover:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-900"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-lg leading-none">{f.icon}</span>
-                        <span className={`text-sm font-semibold transition-colors ${
-                          selectedFabric === f.id
+                        <span className={`text-sm font-semibold transition-colors ${selectedFabric === f.id
                             ? "text-teal-700 dark:text-teal-300"
                             : "text-gray-700 dark:text-zinc-300"
-                        }`}>
+                          }`}>
                           {f.name}
                         </span>
                       </div>
-                      <span className={`text-[11px] font-light transition-colors ${
-                        selectedFabric === f.id
+                      <span className={`text-[11px] font-light transition-colors ${selectedFabric === f.id
                           ? "text-teal-600/70 dark:text-teal-400/70"
                           : "text-gray-400 dark:text-zinc-500"
-                      }`}>
+                        }`}>
                         {f.desc}
                       </span>
                       {selectedFabric === f.id && (
@@ -507,11 +500,10 @@ export default function GorselYerlestirmePage() {
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit}
-                  className={`w-full py-4 rounded-xl font-semibold text-[15px] flex items-center justify-center gap-3 transition-all ${
-                    canSubmit
+                  className={`w-full py-4 rounded-xl font-semibold text-[15px] flex items-center justify-center gap-3 transition-all ${canSubmit
                       ? "bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-gray-200 hover:scale-[1.02] shadow-lg shadow-black/10 active:scale-[0.98]"
                       : "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed border border-gray-200 dark:border-zinc-700"
-                  }`}
+                    }`}
                   type="button"
                 >
                   {isLoading ? (
@@ -526,7 +518,7 @@ export default function GorselYerlestirmePage() {
                     </>
                   )}
                 </button>
-                
+
                 {(!roomImage || !productImage) && (
                   <p className="text-center text-[13px] text-gray-400 dark:text-zinc-500 mt-4 font-light flex items-center justify-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-zinc-700"></span>
@@ -546,16 +538,16 @@ export default function GorselYerlestirmePage() {
             className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-8 shadow-sm flex flex-col items-center transition-colors"
           >
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-500/10 mb-6 border border-emerald-100 dark:border-emerald-500/20">
-               <Sparkles className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
+              <Sparkles className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-100 tracking-[-0.02em] mb-2">Harika Görünüyor!</h2>
             <p className="text-gray-500 dark:text-zinc-400 mb-8 max-w-sm text-center text-sm">Yapay zeka eşyayı odanızın aydınlatma ve zemin yapısına uygun şekilde yerleştirdi.</p>
-            
+
             <div className="relative w-full max-w-3xl rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-800 shadow-md bg-gray-50 dark:bg-zinc-950 mb-8">
-               <img src={resultImage} alt="Oluşturulan Görsel" className="w-full h-auto object-cover" />
-               <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full border border-white/10 text-white text-[12px] font-medium shadow-sm">
-                 <Sparkles className="w-3.5 h-3.5 text-indigo-300" /> AI Generated
-               </div>
+              <img src={resultImage} alt="Oluşturulan Görsel" className="w-full h-auto object-cover" />
+              <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full border border-white/10 text-white text-[12px] font-medium shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-300" /> AI Generated
+              </div>
             </div>
 
             <button
@@ -690,11 +682,10 @@ export default function GorselYerlestirmePage() {
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className={`bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-300 overflow-hidden ${
-                openFaqIndex === index 
-                  ? "border-indigo-200 dark:border-indigo-500/50 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]" 
+              className={`bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-300 overflow-hidden ${openFaqIndex === index
+                  ? "border-indigo-200 dark:border-indigo-500/50 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]"
                   : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 shadow-sm"
-              }`}
+                }`}
             >
               <button
                 onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
@@ -703,9 +694,8 @@ export default function GorselYerlestirmePage() {
                 <span className={`text-[15px] font-semibold pr-4 transition-colors ${openFaqIndex === index ? "text-indigo-900 dark:text-indigo-300" : "text-gray-900 dark:text-zinc-200"}`}>
                   {faq.question}
                 </span>
-                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                  openFaqIndex === index ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" : "bg-gray-50 dark:bg-zinc-950 text-gray-400 dark:text-zinc-500 border border-gray-100 dark:border-zinc-800"
-                }`}>
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${openFaqIndex === index ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" : "bg-gray-50 dark:bg-zinc-950 text-gray-400 dark:text-zinc-500 border border-gray-100 dark:border-zinc-800"
+                  }`}>
                   {openFaqIndex === index ? (
                     <Minus size={18} />
                   ) : (
