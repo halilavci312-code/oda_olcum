@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-export const maxDuration = 120; 
+export const maxDuration = 120;
 
 const N8N_WEBHOOK_URL = "https://n8n.halilavc.com/webhook/odanda-gor";
 
 const textureMap: Record<string, string> = {
   // ─── Kumaşlar ───
-  "kadife":  "high quality velvet fabric texture, soft lighting, vibrant, photorealistic upholstery",
-  "keten":   "natural linen fabric texture, woven pattern, subtle fabric imperfections, highly detailed",
-  "deri":    "premium genuine leather, slight shine, highly detailed authentic leather grain and reflections",
-  "sonil":   "luxurious chenille fabric texture, soft plush woven loops, cozy tactile surface, highly detailed",
+  "kadife": "high quality velvet fabric texture, soft lighting, vibrant, photorealistic upholstery",
+  "keten": "natural linen fabric texture, woven pattern, subtle fabric imperfections, highly detailed",
+  "deri": "premium genuine leather, slight shine, highly detailed authentic leather grain and reflections",
+  "sonil": "luxurious chenille fabric texture, soft plush woven loops, cozy tactile surface, highly detailed",
 
   // ─── Renkler ───
-  "bej":       "warm beige, light cream, soft neutral tone",
-  "antrasit":  "dark anthracite grey, deep charcoal, modern matte finish",
-  "kiremit":   "terracotta brown, warm taba tan, earthy burnt sienna tone",
-  "zumrut":    "rich emerald green, deep jewel-toned green, elegant dark green"
+  "bej": "warm beige, light cream, soft neutral tone",
+  "antrasit": "dark anthracite grey, deep charcoal, modern matte finish",
+  "kiremit": "terracotta brown, warm taba tan, earthy burnt sienna tone",
+  "zumrut": "rich emerald green, deep jewel-toned green, elegant dark green"
 };
 
 export async function POST(req: NextRequest) {
@@ -68,27 +68,19 @@ export async function POST(req: NextRequest) {
 
     console.log("[proxy] n8n payload:", JSON.stringify(n8nPayload));
 
-    // 2. n8n'e asenkron istek atıp sonucunu bekliyoruz (Vercel lambda'nın işlemi iptal etmemesi için)
-    try {
-      const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(n8nPayload)
-      });
-      if (!n8nResponse.ok) {
-        console.error("n8n hata kodu döndü:", n8nResponse.status);
-      } else {
-        console.log("n8n başarıyla tetiklendi.");
-      }
-    } catch (err) {
-      console.error("n8n isteği sırasında hata:", err);
-    }
+    // 2. n8n'e asenkron istek atıp sonucu beklemiyoruz (Ateşle ve Unut / Fire-and-forget)
+    // Böylece Vercel veya sunucu timeout'a düşmeden anında yanıt verebiliriz.
+    fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(n8nPayload)
+    }).catch(err => console.error("n8n fire-and-forget başarısız:", err));
 
     // 3. Frontend'e hemen Job ID dönüyoruz (Polling statüsü takip edilmesi için)
-    return NextResponse.json({ 
-      success: true, 
-      job_id: job.id, 
-      message: "İşlem kuyruğa alındı. Lütfen bekleyin..." 
+    return NextResponse.json({
+      success: true,
+      job_id: job.id,
+      message: "İşlem kuyruğa alındı. Lütfen bekleyin..."
     });
 
   } catch (err: any) {
