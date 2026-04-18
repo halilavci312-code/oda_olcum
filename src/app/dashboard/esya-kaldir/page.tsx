@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, Camera, Sparkles, X, Loader2, ArrowRight, Plus, Minus } from "lucide-react";
+import { Upload, Camera, Sparkles, X, Loader2, ArrowRight, Plus, Minus, Palette, Shirt, Check } from "lucide-react";
 import { useState, useRef, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +13,8 @@ type StoreState = {
   productPreview: string | null;
   isLoading: boolean;
   resultImage: string | null;
+  selectedColor: string;
+  selectedFabric: string;
 };
 
 let globalState: StoreState = {
@@ -22,6 +24,8 @@ let globalState: StoreState = {
   productPreview: null,
   isLoading: false,
   resultImage: null,
+  selectedColor: "orijinal",
+  selectedFabric: "orijinal",
 };
 
 let listeners: Array<() => void> = [];
@@ -41,7 +45,7 @@ const store = {
 
 export default function GorselYerlestirmePage() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const { roomImage, productImage, roomPreview, productPreview, isLoading, resultImage } = state;
+  const { roomImage, productImage, roomPreview, productPreview, isLoading, resultImage, selectedColor, selectedFabric } = state;
   
   const setRoomImage = (file: File | null) => store.setState({ roomImage: file });
   const setProductImage = (file: File | null) => store.setState({ productImage: file });
@@ -49,6 +53,24 @@ export default function GorselYerlestirmePage() {
   const setProductPreview = (s: string | null) => store.setState({ productPreview: s });
   const setIsLoading = (loading: boolean) => store.setState({ isLoading: loading });
   const setResultImage = (s: string | null) => store.setState({ resultImage: s });
+  const setSelectedColor = (s: string) => store.setState({ selectedColor: s });
+  const setSelectedFabric = (s: string) => store.setState({ selectedFabric: s });
+
+  const colors = [
+    { id: "orijinal", name: "Orijinal",     hex: "linear-gradient(135deg,#e5e7eb,#d1d5db)", border: "#9ca3af" },
+    { id: "bej",      name: "Bej / Krem",    hex: "#D4B896",                                  border: "#C4A67A" },
+    { id: "antrasit", name: "Antrasit Gri",  hex: "#3B3B3B",                                  border: "#555555" },
+    { id: "kiremit",  name: "Kiremit / Taba",hex: "#B5651D",                                  border: "#8B4513" },
+    { id: "zumrut",   name: "Zümrüt Yeşili", hex: "#046307",                                  border: "#2E8B57" }
+  ];
+
+  const fabrics = [
+    { id: "orijinal", name: "Orijinal", icon: "✦",  desc: "Değişiklik yok" },
+    { id: "kadife",   name: "Kadife",   icon: "🧶", desc: "Yumuşak & zarif" },
+    { id: "keten",    name: "Keten",    icon: "🌾", desc: "Doğal dokulu" },
+    { id: "deri",     name: "Deri",     icon: "🪶", desc: "Premium deri" },
+    { id: "sonil",    name: "Şönil",    icon: "🧵", desc: "Peluş & konforlu" }
+  ];
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
@@ -136,55 +158,63 @@ export default function GorselYerlestirmePage() {
         uploadFile(productImage)
       ]);
 
-      // 2. n8n Webhook'una Proxy Üzerinden İstek Gönder (CORS sorunu yaşamamak için)
+      // 2. n8n Webhook'una Proxy Üzerinden İstek Gönder ve Job ID al (Asenkron)
       const response = await fetch("/api/gorsel-yerlestir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           oda_resim_url: odaResimUrl,
-          urun_resim_url: urunResimUrl
+          urun_resim_url: urunResimUrl,
+          color: selectedColor === "orijinal" ? "" : selectedColor,
+          fabric: selectedFabric === "orijinal" ? "" : selectedFabric
         })
       });
 
       if (!response.ok) {
-        let errorDetail = "";
-        try {
-          const errorData = await response.json();
-          errorDetail = errorData.detail || errorData.error || "";
-        } catch (e) {
-          errorDetail = "Bağlantı veya sunucu hatası.";
-        }
-        throw new Error(`n8n hatası (${response.status}): ${errorDetail}`);
+        throw new Error(`Bağlantı hatası (${response.status})`);
       }
 
-      const resultText = await response.text();
-      console.log("n8n ham yanıt:", resultText);
-      
-      let n8nData: any = {};
-      try {
-        if (resultText.trim()) {
-          n8nData = JSON.parse(resultText);
-        } else {
-          // n8n boş body döndürdü — workflow "Respond to Webhook" node eksik veya yanlış
-          console.warn("n8n boş yanıt döndürdü. Workflow'da 'Respond to Webhook' node'u kontrol et.");
-          toast.error("n8n workflow'u yanıt döndürmedi. Lütfen n8n'deki 'Respond to Webhook' node'unu kontrol edin.");
-          setIsLoading(false);
-          return;
-        }
-      } catch(e) {
-        console.warn("n8n yanıtı JSON değil:", resultText);
+      const initData = await response.json();
+      if (!initData.job_id) {
+        throw new Error("Job ID alınamadı!");
       }
 
-      // n8n'den dönen sonuc_fotograf formatını al
-      const finalImageUrl = n8nData?.sonuc_fotograf;
+      // 3. Polling Başlat (Her 3 saniyede 1 Supabase'den statü sorulacak)
+      let isCompleted = false;
+      let finalImageUrl = null;
+      let attempts = 0;
+      const maxAttempts = 40; // 120 saniye max (3s x 40)
+
+      while (!isCompleted && attempts < maxAttempts) {
+        await new Promise(res => setTimeout(res, 3000));
+        attempts++;
+
+        const { data: job, error: jobError } = await supabase
+          .from("generation_jobs")
+          .select("*")
+          .eq("id", initData.job_id)
+          .single();
+
+        if (jobError) {
+          console.error("Job kontrol hatası:", jobError);
+          continue;
+        }
+
+        if (job.status === "completed") {
+          isCompleted = true;
+          finalImageUrl = job.result_url;
+        } else if (job.status === "failed") {
+          throw new Error(job.error_message || "İşlem başarısız oldu.");
+        }
+      }
+
+      if (!isCompleted) {
+        throw new Error("İşlem zaman aşımına uğradı (120s).");
+      }
       
-      if (finalImageUrl && typeof finalImageUrl === "string" && finalImageUrl.startsWith("http")) {
+      if (finalImageUrl) {
         setResultImage(finalImageUrl);
         toast.success("Fotoğraf başarıyla oluşturuldu!");
-      } else {
-        const keys = Object.keys(n8nData).join(", ");
-        console.warn("n8n'den beklenen 'sonuc_fotograf' anahtarı yok. Dönen anahtarlar:", keys || "(boş)");
-        toast.error(`n8n'den 'sonuc_fotograf' anahtarı gelmedi. Dönen veri: ${JSON.stringify(n8nData).substring(0, 200)}`);
       }
     } catch (err: any) {
       console.error(err);
@@ -372,6 +402,104 @@ export default function GorselYerlestirmePage() {
                       </div>
                     </button>
                   )}
+                </div>
+              </div>
+
+              {/* ═══════ RENK SEÇİMİ ═══════ */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Palette size={16} className="text-indigo-500 dark:text-indigo-400" />
+                  <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Renk Seçimi</span>
+                  {selectedColor !== "orijinal" && (
+                    <span className="ml-auto text-xs text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-500/20">
+                      {colors.find(c => c.id === selectedColor)?.name}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {colors.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedColor(c.id)}
+                      className={`group relative flex flex-col items-center gap-1.5 transition-all duration-200 ${
+                        selectedColor === c.id ? "scale-110" : "hover:scale-105"
+                      }`}
+                      title={c.name}
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-full shadow-md transition-all duration-200 flex items-center justify-center ${
+                          selectedColor === c.id
+                            ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900 ring-indigo-500 shadow-lg"
+                            : "ring-1 ring-gray-200 dark:ring-zinc-700 hover:ring-gray-300 dark:hover:ring-zinc-600"
+                        }`}
+                        style={{ background: c.hex }}
+                      >
+                        {selectedColor === c.id && (
+                          <Check size={16} className={`${
+                            c.id === "antrasit" || c.id === "zumrut" ? "text-white" : "text-gray-700"
+                          } drop-shadow-sm`} strokeWidth={3} />
+                        )}
+                      </div>
+                      <span className={`text-[10px] font-medium transition-colors ${
+                        selectedColor === c.id
+                          ? "text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300"
+                      }`}>
+                        {c.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ═══════ KUMAŞ SEÇİMİ ═══════ */}
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <Shirt size={16} className="text-teal-500 dark:text-teal-400" />
+                  <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Kumaş Tipi</span>
+                  {selectedFabric !== "orijinal" && (
+                    <span className="ml-auto text-xs text-teal-600 dark:text-teal-400 font-medium bg-teal-50 dark:bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-100 dark:border-teal-500/20">
+                      {fabrics.find(f => f.id === selectedFabric)?.name}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  {fabrics.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setSelectedFabric(f.id)}
+                      className={`relative px-4 py-3 rounded-xl border text-left transition-all duration-200 group ${
+                        selectedFabric === f.id
+                          ? "border-teal-400 dark:border-teal-500/60 bg-teal-50/60 dark:bg-teal-500/10 shadow-sm ring-1 ring-teal-200 dark:ring-teal-500/30"
+                          : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-gray-300 dark:hover:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-900"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg leading-none">{f.icon}</span>
+                        <span className={`text-sm font-semibold transition-colors ${
+                          selectedFabric === f.id
+                            ? "text-teal-700 dark:text-teal-300"
+                            : "text-gray-700 dark:text-zinc-300"
+                        }`}>
+                          {f.name}
+                        </span>
+                      </div>
+                      <span className={`text-[11px] font-light transition-colors ${
+                        selectedFabric === f.id
+                          ? "text-teal-600/70 dark:text-teal-400/70"
+                          : "text-gray-400 dark:text-zinc-500"
+                      }`}>
+                        {f.desc}
+                      </span>
+                      {selectedFabric === f.id && (
+                        <div className="absolute top-2 right-2">
+                          <Check size={14} className="text-teal-500 dark:text-teal-400" strokeWidth={3} />
+                        </div>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
 

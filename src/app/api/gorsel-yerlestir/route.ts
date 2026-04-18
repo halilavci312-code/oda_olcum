@@ -1,46 +1,88 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
-export const maxDuration = 120; // AI işlemi için 120 sn timeout
+export const maxDuration = 120; 
 
 const N8N_WEBHOOK_URL = "https://n8n.halilavc.com/webhook/odanda-gor";
+
+const textureMap: Record<string, string> = {
+  // ─── Kumaşlar ───
+  "kadife":  "high quality velvet fabric texture, soft lighting, vibrant, photorealistic upholstery",
+  "keten":   "natural linen fabric texture, woven pattern, subtle fabric imperfections, highly detailed",
+  "deri":    "premium genuine leather, slight shine, highly detailed authentic leather grain and reflections",
+  "sonil":   "luxurious chenille fabric texture, soft plush woven loops, cozy tactile surface, highly detailed",
+
+  // ─── Renkler ───
+  "bej":       "warm beige, light cream, soft neutral tone",
+  "antrasit":  "dark anthracite grey, deep charcoal, modern matte finish",
+  "kiremit":   "terracotta brown, warm taba tan, earthy burnt sienna tone",
+  "zumrut":    "rich emerald green, deep jewel-toned green, elegant dark green"
+};
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log("[proxy] n8n'e gönderilen body:", JSON.stringify(body));
+    console.log("[proxy] Gelen istek:", JSON.stringify(body));
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 115_000); // 115sn
+    const { oda_resim_url, urun_resim_url, color, fabric } = body;
 
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+    if (!oda_resim_url || !urun_resim_url) {
+      return NextResponse.json({ error: "Oda veya Ürün görseli eksik" }, { status: 400 });
+    }
+
+    // Haritalama işlemi — Türkçe seçimi İngilizce prompt'a çevir
+    const colorPrompt = textureMap[color] || "";
+    const fabricPrompt = textureMap[fabric] || "";
+
+    // Birleşik prompt: renk + kumaş
+    const parts: string[] = [];
+    if (colorPrompt) parts.push(colorPrompt);
+    if (fabricPrompt) parts.push(fabricPrompt);
+    const combinedPrompt = parts.join(", ");
+
+    // 1. Supabase'e Job oluştur (texture_prompt dahil)
+    const { data: job, error: insertError } = await supabase
+      .from("generation_jobs")
+      .insert({
+        status: "processing",
+        room_image: oda_resim_url,
+        product_image: urun_resim_url,
+        color: color || null,
+        fabric: fabric || null,
+        texture_prompt: combinedPrompt || null
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      console.error("Supabase insert error:", insertError);
+      return NextResponse.json({ error: "Veritabanına iş oluşturulamadı" }, { status: 500 });
+    }
+
+    const n8nPayload = {
+      job_id: job.id,
+      oda_resim_url,
+      urun_resim_url,
+      texture_prompt: combinedPrompt
+    };
+
+    console.log("[proxy] n8n payload:", JSON.stringify(n8nPayload));
+
+    // 2. n8n'e asenkron istek atıp sonucu beklemiyoruz (Ateşle ve Unut / Fire-and-forget)
+    // Böylece Vercel veya sunucu timeout'a düşmeden anında yanıt verebiliriz.
+    fetch(N8N_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
+      body: JSON.stringify(n8nPayload)
+    }).catch(err => console.error("n8n fire-and-forget başarısız:", err));
+
+    // 3. Frontend'e hemen Job ID dönüyoruz (Polling statüsü takip edilmesi için)
+    return NextResponse.json({ 
+      success: true, 
+      job_id: job.id, 
+      message: "İşlem kuyruğa alındı. Lütfen bekleyin..." 
     });
 
-    clearTimeout(timeout);
-    console.log("[proxy] n8n status:", n8nResponse.status);
-
-    const responseText = await n8nResponse.text();
-
-    if (!n8nResponse.ok) {
-      return NextResponse.json(
-        { error: `n8n hata verdi: ${n8nResponse.status}`, detail: responseText },
-        { status: n8nResponse.status }
-      );
-    }
-
-    // JSON döndürüyorsa parse et, değilse text olarak gönder
-    try {
-      const data = JSON.parse(responseText);
-      return NextResponse.json(data);
-    } catch {
-      return new NextResponse(responseText, {
-        status: 200,
-        headers: { "Content-Type": "text/plain" },
-      });
-    }
   } catch (err: any) {
     console.error("[gorsel-yerlestir proxy] Hata:", err);
     return NextResponse.json(
