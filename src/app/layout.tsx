@@ -40,6 +40,9 @@ export default function RootLayout({
             --chat--message--bot--background: #ffffff;
             --chat--message--user--color: #ffffff;
             --chat--message--user--background: #000000;
+            --chat--input--text-color: #000000;
+            --chat--input--background: #ffffff;
+            --chat--color-typing: #000000;
           }
         `}} />
       </head>
@@ -58,6 +61,10 @@ export default function RootLayout({
               import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
               createChat({
                 webhookUrl: 'https://n8n.halilavc.com/webhook/oda-olcum-chatbot/chat',
+                initialMessages: [
+                  'Merhaba! 👋',
+                  'Size nasıl yardımcı olabilirim?'
+                ],
                 i18n: {
                   en: {
                     title: 'Merhaba! 👋',
