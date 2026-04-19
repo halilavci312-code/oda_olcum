@@ -25,6 +25,13 @@ export default function RootLayout({
     <html lang="tr" suppressHydrationWarning>
       <head>
         <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
+        <style dangerouslySetInnerHTML={{__html: `
+          :root {
+            --chat--color--primary: #000000;
+            --chat--color--primary-shade-50: #1a1a1a;
+            --chat--color--primary--shade-100: #333333;
+          }
+        `}} />
       </head>
       <body className={`${inter.variable} antialiased min-h-screen bg-background text-foreground transition-colors duration-300`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>

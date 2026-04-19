@@ -41,17 +41,3 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-env/
-
-# Temp image folders
-tmp_foto_repo/
-tmp_foto_repo_2/
-
-# Old unused frontend
-frontend/
