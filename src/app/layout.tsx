@@ -30,6 +30,16 @@ export default function RootLayout({
             --chat--color--primary: #000000;
             --chat--color--primary-shade-50: #1a1a1a;
             --chat--color--primary--shade-100: #333333;
+            --chat--color--secondary: #333333;
+            --chat--color-secondary-shade-50: #4d4d4d;
+            --chat--color-dark: #000000;
+            --chat--color-light: #f2f2f2;
+            --chat--color-light-shade-50: #e6e6e6;
+            --chat--color-light-shade-100: #cccccc;
+            --chat--message--bot--color: #000000;
+            --chat--message--bot--background: #ffffff;
+            --chat--message--user--color: #ffffff;
+            --chat--message--user--background: #000000;
           }
         `}} />
       </head>
@@ -47,7 +57,16 @@ export default function RootLayout({
             __html: `
               import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
               createChat({
-                webhookUrl: 'https://n8n.halilavc.com/webhook/oda-olcum-chatbot/chat'
+                webhookUrl: 'https://n8n.halilavc.com/webhook/oda-olcum-chatbot/chat',
+                i18n: {
+                  en: {
+                    title: 'Merhaba! 👋',
+                    subtitle: 'Sohbeti başlatın. Size 7/24 yardımcı olmak için buradayız.',
+                    footer: '',
+                    getStarted: 'Sohbete Başla',
+                    inputPlaceholder: 'Mesajınızı yazın...'
+                  }
+                }
               });
             `,
           }}
