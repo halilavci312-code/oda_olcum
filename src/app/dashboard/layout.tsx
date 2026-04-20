@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSettings } from "@/contexts/settings-context";
+import { LandingFooter } from "@/components/landing-footer";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -133,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-y-auto w-full relative">
+      <main className="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto w-full relative">
         {/* Mobile Header */}
         <div className="md:hidden bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-40 transition-colors duration-300">
           <Link href="/" className="flex items-center gap-2">
@@ -237,9 +238,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
 
-        <div className="p-6 md:p-10 max-w-7xl mx-auto">
+        <div className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
           {children}
         </div>
+        <LandingFooter />
       </main>
     </div>
   );
