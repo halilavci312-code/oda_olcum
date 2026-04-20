@@ -7,6 +7,7 @@ import { Loader2, Home, BarChart2, Crop, Settings, LogOut, Menu, X, Moon, Sun } 
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSettings } from "@/contexts/settings-context";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -15,6 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { t } = useSettings();
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -45,17 +47,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 text-[14px]">Oturum kontrol ediliyor...</p>
+          <p className="text-gray-500 text-[14px]">{t("nav.checking_session")}</p>
         </div>
       </div>
     );
   }
 
   const menuItems = [
-    { label: "Ana Panel", icon: Home, href: "/dashboard" },
-    { label: "Akıllı Ölçüm", icon: Crop, href: "/dashboard/olcum" },
-    { label: "Görsel Yerleştirme", icon: BarChart2, href: "/dashboard/esya-kaldir" },
-    { label: "Ayarlar", icon: Settings, href: "/dashboard/settings" },
+    { label: t("nav.dashboard"), icon: Home, href: "/dashboard" },
+    { label: t("nav.measurement"), icon: Crop, href: "/dashboard/olcum" },
+    { label: t("nav.visual_placement"), icon: BarChart2, href: "/dashboard/esya-kaldir" },
+    { label: t("nav.settings"), icon: Settings, href: "/dashboard/settings" },
   ];
 
   return (
@@ -67,14 +69,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>
               <Home className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-[16px] text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">AkıllıÖlçüm</span>
+            <span className="font-semibold text-[16px] text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">{t("nav.app_name")}</span>
           </Link>
           
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all text-gray-500 dark:text-zinc-400 group relative overflow-hidden focus:outline-none"
-              title={theme === "dark" ? "Açık Mod" : "Koyu Mod"}
+              title={theme === "dark" ? t("nav.light_mode") : t("nav.dark_mode")}
             >
               <div className="relative w-5 h-5 flex items-center justify-center">
                 <Sun className={`absolute w-5 h-5 transition-all duration-500 transform ${theme === "dark" ? "opacity-0 rotate-90 scale-50" : "opacity-100 rotate-0 scale-100 text-amber-500"}`} />
@@ -106,7 +108,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="p-4 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
           <div className="px-3 py-3 rounded-lg border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 flex flex-col gap-2 mb-4">
-             <span className="text-[12px] font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Hesabım</span>
+             <span className="text-[12px] font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">{t("nav.my_account")}</span>
              <span className="text-[13px] text-gray-900 dark:text-zinc-100 truncate" title={user?.email || ""}>
                {user?.email}
              </span>
@@ -115,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
             className="w-full mb-4 px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/20 transition-all text-[13px] font-medium flex items-center justify-center gap-2"
           >
-            <LogOut className="w-4 h-4" /> Çıkış Yap
+            <LogOut className="w-4 h-4" /> {t("nav.logout")}
           </button>
           
           <div className="flex flex-col items-center justify-center pt-2 border-t border-gray-100/50 dark:border-zinc-800/50">
@@ -138,13 +140,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>
               <Home className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-semibold text-[15px] text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">AkıllıÖlçüm</span>
+            <span className="font-semibold text-[15px] text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">{t("nav.app_name")}</span>
           </Link>
           <div className="flex items-center gap-3">
             {mounted && (
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="p-1 rounded-full text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all relative overflow-hidden"
+                title={theme === "dark" ? t("nav.light_mode") : t("nav.dark_mode")}
               >
                 <div className="relative w-5 h-5 flex items-center justify-center">
                   <Sun className={`absolute w-5 h-5 transition-all duration-500 transform ${theme === "dark" ? "opacity-0 rotate-90 scale-50" : "opacity-100 rotate-0 scale-100 text-amber-500"}`} />
@@ -176,7 +179,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>
                     <Home className="w-4 h-4 text-white" />
                   </div>
-                  <span className="font-semibold text-[16px] text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">AkıllıÖlçüm</span>
+                  <span className="font-semibold text-[16px] text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">{t("nav.app_name")}</span>
                 </Link>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-100">
@@ -208,7 +211,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <div className="p-4 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
                 <div className="px-3 py-3 rounded-lg border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 flex flex-col gap-2 mb-4">
-                  <span className="text-[12px] font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Hesabım</span>
+                  <span className="text-[12px] font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">{t("nav.my_account")}</span>
                   <span className="text-[13px] text-gray-900 dark:text-zinc-100 truncate" title={user?.email || ""}>
                     {user?.email}
                   </span>
@@ -217,7 +220,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
                   className="w-full mb-5 px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 hover:border-red-200 transition-all text-[14px] font-medium flex items-center justify-center gap-2"
                 >
-                  <LogOut className="w-4 h-4" /> Çıkış Yap
+                  <LogOut className="w-4 h-4" /> {t("nav.logout")}
                 </button>
                 
                 <div className="flex flex-col items-center justify-center pt-3 border-t border-gray-100/50 dark:border-zinc-800/50">
