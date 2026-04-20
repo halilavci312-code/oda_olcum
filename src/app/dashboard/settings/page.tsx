@@ -103,6 +103,35 @@ export default function SettingsPage() {
             </div>
           </motion.div>
 
+          {/* ewos Solution Partner Badge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.08 }}
+            className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-zinc-900 dark:to-zinc-800/80 rounded-2xl border border-gray-200/80 dark:border-zinc-700/50 p-5 flex items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                <span className="font-extrabold text-[13px] tracking-tight text-gray-700 dark:text-zinc-200">ew</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-[0.15em] block mb-0.5">Solution Partner</span>
+                <div className="flex items-center">
+                  <span className="font-extrabold text-[17px] tracking-tight text-gray-800 dark:text-zinc-100">ewos</span>
+                  <span className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 relative -top-2 ml-0.5">®</span>
+                </div>
+              </div>
+            </div>
+            <a 
+              href="https://ewos.com.tr" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
+            >
+              ewos.com.tr
+            </a>
+          </motion.div>
+
           {/* Profil Kartı */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
