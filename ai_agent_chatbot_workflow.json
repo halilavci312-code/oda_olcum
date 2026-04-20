@@ -1,0 +1,221 @@
+{
+  "name": "Advanced AI Chatbot with Evolution API",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "path": "oda-olcum-chatbot/chat",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        280
+      ],
+      "id": "webhook-trigger",
+      "name": "Chat Webhook Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Sen profesyonel bir müşteri destek asistanısın.\n\nKurallar:\n1. Kullanıcı genel bir soru sorarsa (işleyiş, web sitesi vs.), her zaman veritabanı aracını (Vector Store) kullanarak cevap ver.\n2. Eğer kullanıcı bir HATA (error), teknik sorun veya çalışmayan bir özellik bildirirse şu adımları izle:\n   - İlk olarak anında WhatsApp Bildirim aracını kullanarak teknik ekibe sorunu raporla. Parametre olarak kullanıcının yaşadığı sorunun özetini gönder.\n   - Raporlama tamamlandıktan sonra kullanıcıya sorunun ekibe iletildiğini nazikçe bildir.\n   - Ardından kullanıcıya şu standart çözüm yollarını sun: Tarayıcı önbelleğini temizlemek, farklı bir tarayıcıdan denemek veya sayfayı yenilemek. Eğer veritabanında bu spesifik hataya dair bir çözüm varsa onu da ilet.",
+        "options": {
+          "systemMessage": "Sen profesyonel bir müşteri destek asistanısın.\n\nKurallar:\n1. Kullanıcı genel bir soru sorarsa (işleyiş, web sitesi vs.), her zaman veritabanı aracını (Vector Store) kullanarak cevap ver.\n2. Eğer kullanıcı bir HATA (error), teknik sorun veya çalışmayan bir özellik bildirirse şu adımları izle:\n   - İlk olarak anında WhatsApp Bildirim aracını kullanarak teknik ekibe sorunu raporla. Parametre olarak kullanıcının yaşadığı sorunun özetini gönder.\n   - Raporlama tamamlandıktan sonra kullanıcıya sorunun ekibe iletildiğini nazikçe bildir.\n   - Ardından kullanıcıya şu standart çözüm yollarını sun: Tarayıcı önbelleğini temizlemek, farklı bir tarayıcıdan denemek veya sayfayı yenilemek. Eğer veritabanında bu spesifik hataya dair bir çözüm varsa onu da ilet."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [
+        480,
+        280
+      ],
+      "id": "ai-agent",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        480,
+        480
+      ],
+      "id": "openai-chat-model",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1,
+      "position": [
+        600,
+        480
+      ],
+      "id": "window-buffer-memory",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "tableName": "documents",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        780,
+        480
+      ],
+      "id": "supabase-vector-store",
+      "name": "Supabase Vector Store Tool",
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "whatsapp_bildirim_araci",
+        "description": "Kullanıcı sistemde bir hata, teknik sorun veya işlem başarısızlığı bildirdiğinde KESİNLİKLE bu aracı çalıştır. Bu araç teknik ekibe WhatsApp üzerinden bildirim gönderir. ÖNEMLİ: 'hata_ozeti' adında bir parametre dönmelisin (kullanıcının yaşadığı sorunun özetini içermelidir).",
+        "method": "POST",
+        "url": "https://EVOLUTION_API_URL/message/sendText/INSTANCE_NAME",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "EVOLUTION_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "905XXYYYZZWW"
+            },
+            {
+              "name": "text",
+              "value": "Sistemde hata bildirimi: {{$json.hata_ozeti}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        920,
+        480
+      ],
+      "id": "whatsapp-notification-tool",
+      "name": "WhatsApp Bildirim Aracı",
+      "typeOptions": {
+        "nodeVersion": 4.1
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        780,
+        640
+      ],
+      "id": "openai-embeddings",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Chat Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Bildirim Aracı": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store Tool",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
+import { SettingsProvider } from "@/contexts/settings-context";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -48,8 +49,10 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased min-h-screen bg-background text-foreground transition-colors duration-300`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
-          <Toaster position="bottom-right" richColors />
+          <SettingsProvider>
+            {children}
+            <Toaster position="bottom-right" richColors />
+          </SettingsProvider>
         </ThemeProvider>
 
         <Script

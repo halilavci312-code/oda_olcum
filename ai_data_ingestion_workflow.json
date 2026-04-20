@@ -1,0 +1,202 @@
+{
+  "name": "Web Sitesinden Supabase'e Veri Yükleme (RAG)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "id": "manual-trigger",
+      "name": "Senkronizasyonu Başlat"
+    },
+    {
+      "parameters": {
+        "url": "https://halilavc.com",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        300
+      ],
+      "id": "http-request",
+      "name": "Sayfayı Çek",
+      "typeOptions": {
+        "nodeVersion": 4.1
+      }
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {
+              "key": "text_content",
+              "cssSelector": "body",
+              "returnValue": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ],
+      "id": "html-extract",
+      "name": "HTML'den Metin Çıkar"
+    },
+    {
+      "parameters": {
+        "options": {
+          "textData": "={{$json.text_content}}",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "source",
+                "value": "https://halilavc.com"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ],
+      "id": "default-data-loader",
+      "name": "AI Formatına Çevir"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableName": "documents",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        300
+      ],
+      "id": "supabase-insert",
+      "name": "Supabase'e Yaz",
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        500
+      ],
+      "id": "embeddings-openai",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkSize": 1000,
+        "chunkOverlap": 200
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        500
+      ],
+      "id": "text-splitter",
+      "name": "Uzun Metinleri Böl"
+    }
+  ],
+  "connections": {
+    "Senkronizasyonu Başlat": {
+      "main": [
+        [
+          {
+            "node": "Sayfayı Çek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sayfayı Çek": {
+      "main": [
+        [
+          {
+            "node": "HTML'den Metin Çıkar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML'den Metin Çıkar": {
+      "main": [
+        [
+          {
+            "node": "AI Formatına Çevir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Formatına Çevir": {
+      "main": [
+        [
+          {
+            "node": "Supabase'e Yaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase'e Yaz",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uzun Metinleri Böl": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "AI Formatına Çevir",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

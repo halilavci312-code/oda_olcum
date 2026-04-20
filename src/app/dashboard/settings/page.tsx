@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { useSettings } from "@/contexts/settings-context";
 
 export default function SettingsPage() {
   const [email, setEmail] = useState("");
@@ -26,8 +27,7 @@ export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   
-  const [measurementUnit, setMeasurementUnit] = useState("metric");
-  const [language, setLanguage] = useState("tr");
+  const { measurementUnit, setMeasurementUnit, language, setLanguage, t } = useSettings();
 
   useEffect(() => {
     setMounted(true);

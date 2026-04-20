@@ -24,7 +24,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { tr } from "date-fns/locale";
+import { tr, enUS } from "date-fns/locale";
+import { useSettings } from "@/contexts/settings-context";
 
 const API_URL = "/api/olcum";
 const ZOOM = 3;
@@ -61,6 +62,8 @@ export default function OlcumPage() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [history, setHistory] = useState<DBMeasurement[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  
+  const { measurementUnit, language, t } = useSettings();
   
   const [customerName, setCustomerName] = useState("");
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -420,7 +423,7 @@ export default function OlcumPage() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm text-[13px] font-medium text-gray-600 dark:text-zinc-400 mb-6 transition-colors"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
-            Ölçüm Paneli
+            {t("measurement.panel")}
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -428,7 +431,7 @@ export default function OlcumPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl md:text-5xl font-bold tracking-[-0.03em] mb-4 text-gray-900 dark:text-zinc-100"
           >
-            Pratik <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-teal-500">Alan</span> Ölçümü
+            {t("measurement.title.1")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-teal-500">{t("measurement.title.2")}</span> {t("measurement.title.3")}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -436,7 +439,7 @@ export default function OlcumPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-gray-500 dark:text-zinc-400 text-lg max-w-2xl mx-auto font-light"
           >
-            Fotoğrafınızı yükleyin, duvarın 4 köşesini seçin. Yapay zeka ortalama %90 doğruluk payıyla (±10-15 cm sapma payı olabilir) saniyeler içinde alanınızı hesaplasın.
+            {t("measurement.desc")}
           </motion.p>
         </header>
 
@@ -453,7 +456,7 @@ export default function OlcumPage() {
             >
               
               <div className="bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm transition-colors">
-                <label className="block text-[14px] font-semibold text-gray-700 dark:text-zinc-300 mb-2">Müşteri Adı - Soyadı</label>
+                <label className="block text-[14px] font-semibold text-gray-700 dark:text-zinc-300 mb-2">{t("measurement.customer_name")}</label>
                 <input
                   type="text"
                   placeholder="Örn: Ahmet Yılmaz"
@@ -496,7 +499,7 @@ export default function OlcumPage() {
                   <div className="w-16 h-16 mb-6 rounded-2xl flex items-center justify-center border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 group-hover:bg-white dark:group-hover:bg-zinc-900 group-hover:scale-110 group-hover:border-indigo-500/30 transition-all duration-300 shadow-sm">
                     <Upload className="w-7 h-7 text-gray-400 dark:text-zinc-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 tracking-[-0.01em]">Fotoğraf Yükle</h3>
+                  <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-zinc-100 tracking-[-0.01em]">{t("measurement.upload_photo")}</h3>
                   <p className="text-gray-500 dark:text-zinc-400 text-[14px] font-light mb-8">Sürükleyip bırakın veya seçmek için tıklayın (JPG, PNG)</p>
                   <span
                   className="bg-black dark:bg-white text-white dark:text-black font-semibold py-3 px-8 rounded-full text-[14px] inline-block shadow-md transition-all duration-300 hover:bg-neutral-800 dark:hover:bg-gray-200 hover:scale-[1.03] active:scale-[0.97]"
@@ -512,7 +515,7 @@ export default function OlcumPage() {
                   <div className="flex-shrink-0 w-12 h-12 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center text-indigo-500 dark:text-indigo-400">
                     <Info className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 tracking-tight">Doğru Ölçüm İçin Fotoğraf Kuralları</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 tracking-tight">{t("measurement.upload_rules")}</h3>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[14px]">
@@ -549,7 +552,7 @@ export default function OlcumPage() {
               {/* HISTORY SECTION */}
               <section className="mb-12">
                 <div className="flex items-center justify-between mb-4 px-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-[-0.01em]">Geçmiş Ölçümlerim</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-[-0.01em]">{t("measurement.history")}</h2>
                 </div>
                 
                 {historyLoading ? (
@@ -600,12 +603,16 @@ export default function OlcumPage() {
                           {/* Dimensions */}
                           <div className="flex flex-col justify-center">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-[11px] text-gray-400 dark:text-zinc-500 uppercase tracking-widest">En</span>
-                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">{Number(item.wall_width_cm).toFixed(1)}cm</span>
+                              <span className="text-[11px] text-gray-400 dark:text-zinc-500 uppercase tracking-widest">{t("common.width")}</span>
+                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">
+                                {measurementUnit === "imperial" ? (Number(item.wall_width_cm) * 0.393701).toFixed(1) + "in" : Number(item.wall_width_cm).toFixed(1) + "cm"}
+                              </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-[11px] text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Boy</span>
-                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">{Number(item.wall_height_cm).toFixed(1)}cm</span>
+                              <span className="text-[11px] text-gray-400 dark:text-zinc-500 uppercase tracking-widest">{t("common.height")}</span>
+                              <span className="text-[15px] font-semibold text-gray-900 dark:text-zinc-100">
+                                {measurementUnit === "imperial" ? (Number(item.wall_height_cm) * 0.393701).toFixed(1) + "in" : Number(item.wall_height_cm).toFixed(1) + "cm"}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -640,11 +647,10 @@ export default function OlcumPage() {
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 flex items-center gap-3 tracking-[-0.01em]">
                     <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold text-white shadow-sm" style={{ background: "linear-gradient(135deg, #111111, #333333)" }}>2</span>
-                    Köşeleri Seçin
+                    {t("measurement.select_corners")}
                   </h2>
                   <p className="text-gray-500 dark:text-zinc-400 mt-1 text-[14px] font-light">
-                    Ölçülecek alanın 4 köşesine sırasıyla tıklayın.{" "}
-                    <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{points.length}</span>/4 Seçildi
+                    <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{points.length}</span>/4 {t("measurement.corners_selected")}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -652,7 +658,7 @@ export default function OlcumPage() {
                     onClick={handleReset}
                     className="px-4 py-2 rounded-xl border border-rose-200 dark:border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 transition-all text-[13px] font-medium flex items-center gap-2"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" /> Farklı Görsel Seç
+                    <RefreshCw className="w-3.5 h-3.5" /> {t("measurement.choose_different")}
                   </button>
                   <button
                     onClick={() => setMagnifierEnabled((v) => !v)}
@@ -673,7 +679,7 @@ export default function OlcumPage() {
                     }}
                     className="px-4 py-2 rounded-full border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100 transition-all text-[13px] font-medium flex items-center gap-2"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" /> Temizle
+                    <RotateCcw className="w-3.5 h-3.5" /> {t("measurement.clear")}
                   </button>
                   <button
                     disabled={points.length !== 4}
@@ -684,7 +690,7 @@ export default function OlcumPage() {
                         : "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed border border-gray-200 dark:border-zinc-700"
                     }`}
                   >
-                    <Zap className="w-3.5 h-3.5" /> Hesapla
+                    <Zap className="w-3.5 h-3.5" /> {t("measurement.calculate")}
                   </button>
                 </div>
               </div>
@@ -769,10 +775,7 @@ export default function OlcumPage() {
                 />
                 <Loader2 className="absolute inset-0 w-6 h-6 m-auto text-gray-400 dark:text-zinc-500 animate-pulse" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-2 tracking-[-0.01em]">Yapay Zeka Analiz Ediyor...</h3>
-              <p className="text-gray-500 dark:text-zinc-400 text-[14px] font-light">
-                Referans nesneler tespit ediliyor ve pikseller gerçek dünya ölçülerine çevriliyor.
-              </p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-2 tracking-[-0.01em]">{t("measurement.analyzing")}</h3>
             </motion.section>
           )}
 
@@ -797,27 +800,39 @@ export default function OlcumPage() {
                     <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-500/20">
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">Ölçüm Tamamlandı</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-zinc-100 tracking-[-0.02em]">{t("measurement.completed")}</h2>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <div className="border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 rounded-2xl p-6 relative overflow-hidden group hover:border-gray-300 dark:hover:border-zinc-700 transition-all">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.04] dark:bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/[0.08] dark:group-hover:bg-indigo-500/20 transition-all" />
-                      <p className="text-gray-500 dark:text-zinc-400 text-[12px] font-medium uppercase tracking-widest mb-1">Genişlik</p>
+                      <p className="text-gray-500 dark:text-zinc-400 text-[12px] font-medium uppercase tracking-widest mb-1">{t("common.width")}</p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">{result.duvar_genislik_cm}</span>
-                        <span className="text-lg text-gray-400 dark:text-zinc-500 font-light">cm</span>
+                        <span className="text-5xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">
+                          {measurementUnit === "imperial" ? (result.duvar_genislik_cm * 0.393701).toFixed(1) : result.duvar_genislik_cm}
+                        </span>
+                        <span className="text-lg text-gray-400 dark:text-zinc-500 font-light">
+                          {measurementUnit === "imperial" ? "inç" : "cm"}
+                        </span>
                       </div>
-                      <p className="text-indigo-600 dark:text-indigo-400 font-medium mt-2 text-[13px]">{result.duvar_genislik_m} m</p>
+                      <p className="text-indigo-600 dark:text-indigo-400 font-medium mt-2 text-[13px]">
+                        {measurementUnit === "imperial" ? (result.duvar_genislik_m * 3.28084).toFixed(2) + " feet" : result.duvar_genislik_m + " m"}
+                      </p>
                     </div>
                     <div className="border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 rounded-2xl p-6 relative overflow-hidden group hover:border-gray-300 dark:hover:border-zinc-700 transition-all">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/[0.04] dark:bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/[0.08] dark:group-hover:bg-teal-500/20 transition-all" />
-                      <p className="text-gray-500 dark:text-zinc-400 text-[12px] font-medium uppercase tracking-widest mb-1">Yükseklik</p>
+                      <p className="text-gray-500 dark:text-zinc-400 text-[12px] font-medium uppercase tracking-widest mb-1">{t("common.height")}</p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">{result.duvar_yukseklik_cm}</span>
-                        <span className="text-lg text-gray-400 dark:text-zinc-500 font-light">cm</span>
+                        <span className="text-5xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight">
+                          {measurementUnit === "imperial" ? (result.duvar_yukseklik_cm * 0.393701).toFixed(1) : result.duvar_yukseklik_cm}
+                        </span>
+                        <span className="text-lg text-gray-400 dark:text-zinc-500 font-light">
+                          {measurementUnit === "imperial" ? "inç" : "cm"}
+                        </span>
                       </div>
-                      <p className="text-teal-600 dark:text-teal-400 font-medium mt-2 text-[13px]">{result.duvar_yukseklik_m} m</p>
+                      <p className="text-teal-600 dark:text-teal-400 font-medium mt-2 text-[13px]">
+                         {measurementUnit === "imperial" ? (result.duvar_yukseklik_m * 3.28084).toFixed(2) + " feet" : result.duvar_yukseklik_m + " m"}
+                      </p>
                     </div>
                   </div>
 
