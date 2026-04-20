@@ -42,26 +42,26 @@ export function LandingFooter() {
           </div>
 
           {/* Sütun 2: Gezinme & Destek */}
-          <div className="flex flex-col gap-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Destek & Gezinme</h3>
-            <ul className="flex flex-col gap-3">
+          <div className="flex flex-col gap-5">
+            <h3 className="text-[15px] font-bold text-gray-900 dark:text-white tracking-tight">Destek & Gezinme</h3>
+            <ul className="flex flex-col gap-[18px]">
               <li>
-                <Link href="#nasil-calisir" className="text-sm text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+                <Link href="#nasil-calisir" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                   Nasıl Çalışır?
                 </Link>
               </li>
               <li>
-                <Link href="/sss" className="text-sm text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+                <Link href="/sss" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                   Sıkça Sorulan Sorular
                 </Link>
               </li>
               <li>
-                <Link href="/fiyatlandirma" className="text-sm text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+                <Link href="/fiyatlandirma" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                   Fiyatlandırma
                 </Link>
               </li>
               <li>
-                <a href="mailto:destek@halilavc.com" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+                <a href="mailto:destek@halilavc.com" className="inline-flex items-center gap-2 text-[15px] font-medium text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                   <Mail className="w-3.5 h-3.5" />
                   destek@halilavc.com
                 </a>
@@ -70,21 +70,21 @@ export function LandingFooter() {
           </div>
 
           {/* Sütun 3: Yasal Metinler */}
-          <div className="flex flex-col gap-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Yasal</h3>
-            <ul className="flex flex-col gap-3">
+          <div className="flex flex-col gap-5">
+            <h3 className="text-[15px] font-bold text-gray-900 dark:text-white tracking-tight">Yasal</h3>
+            <ul className="flex flex-col gap-[18px]">
               <li>
-                <Link href="/gizlilik-politikasi" className="text-sm text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+                <Link href="/gizlilik-politikasi" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                   Gizlilik Politikası
                 </Link>
               </li>
               <li>
-                <Link href="/kullanim-kosullari" className="text-sm text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+                <Link href="/kullanim-kosullari" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                   Kullanım Koşulları
                 </Link>
               </li>
               <li>
-                <Link href="/kvkk" className="text-sm text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+                <Link href="/kvkk" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                   KVKK Aydınlatma Metni
                 </Link>
               </li>
