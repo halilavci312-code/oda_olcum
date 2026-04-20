@@ -113,10 +113,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
-            className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/20 transition-all text-[13px] font-medium flex items-center justify-center gap-2"
+            className="w-full mb-4 px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/20 transition-all text-[13px] font-medium flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" /> Çıkış Yap
           </button>
+          
+          <div className="flex flex-col items-center justify-center pt-2 border-t border-gray-100/50 dark:border-zinc-800/50">
+            <div className="flex flex-col items-center opacity-50 hover:opacity-100 transition-opacity duration-300">
+              <span className="text-[9px] text-gray-400 dark:text-zinc-500 font-medium tracking-widest uppercase mb-1">Solution Partner</span>
+              <div className="flex items-center">
+                <span className="font-extrabold text-[15px] tracking-tight text-gray-600 dark:text-zinc-300 font-sans">ewos</span>
+                <span className="text-[8px] font-bold text-gray-500 dark:text-zinc-400 relative -top-1.5 ml-0.5">®</span>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -205,10 +215,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <button
                   onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 hover:border-red-200 transition-all text-[14px] font-medium flex items-center justify-center gap-2"
+                  className="w-full mb-5 px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 hover:border-red-200 transition-all text-[14px] font-medium flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" /> Çıkış Yap
                 </button>
+                
+                <div className="flex flex-col items-center justify-center pt-3 border-t border-gray-100/50 dark:border-zinc-800/50">
+                  <div className="flex flex-col items-center opacity-50 hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[9px] text-gray-400 dark:text-zinc-500 font-medium tracking-widest uppercase mb-1">Solution Partner</span>
+                    <div className="flex items-center">
+                      <span className="font-extrabold text-[15px] tracking-tight text-gray-600 dark:text-zinc-300 font-sans">ewos</span>
+                      <span className="text-[8px] font-bold text-gray-500 dark:text-zinc-400 relative -top-1.5 ml-0.5">®</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
