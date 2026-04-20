@@ -53,6 +53,35 @@ export default function SettingsPage() {
         <p className="text-gray-500 dark:text-zinc-400 mt-1">{t("settings.title_desc")}</p>
       </motion.div>
 
+      {/* ewos Solution Partner Badge - Top, Thin & Wide */}
+      <motion.div
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="max-w-5xl bg-gradient-to-r from-slate-50 to-gray-50 dark:from-zinc-900 dark:to-zinc-800/80 rounded-xl border border-gray-200/80 dark:border-zinc-700/50 p-2.5 px-6 flex items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 shadow-sm hover:shadow-md"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
+            <span className="font-extrabold text-[11px] tracking-tight text-gray-700 dark:text-zinc-200">ew</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-[0.15em] border-r border-gray-200 dark:border-zinc-700 pr-3">Solution Partner</span>
+            <div className="flex items-center">
+              <span className="font-extrabold text-[15px] tracking-tight text-gray-800 dark:text-zinc-100">ewos</span>
+              <span className="text-[8px] font-bold text-gray-400 dark:text-zinc-500 relative -top-1.5 ml-0.5">®</span>
+            </div>
+          </div>
+        </div>
+        <a 
+          href="https://ewos.com.tr" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-3 py-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
+        >
+          ewos.com.tr
+        </a>
+      </motion.div>
+
       <div className="max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Sol Kolon - Plan & Profil */}
@@ -101,35 +130,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
-
-          {/* ewos Solution Partner Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.08 }}
-            className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-zinc-900 dark:to-zinc-800/80 rounded-2xl border border-gray-200/80 dark:border-zinc-700/50 p-5 flex items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300 hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                <span className="font-extrabold text-[13px] tracking-tight text-gray-700 dark:text-zinc-200">ew</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-[0.15em] block mb-0.5">Solution Partner</span>
-                <div className="flex items-center">
-                  <span className="font-extrabold text-[17px] tracking-tight text-gray-800 dark:text-zinc-100">ewos</span>
-                  <span className="text-[9px] font-bold text-gray-400 dark:text-zinc-500 relative -top-2 ml-0.5">®</span>
-                </div>
-              </div>
-            </div>
-            <a 
-              href="https://ewos.com.tr" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
-            >
-              ewos.com.tr
-            </a>
           </motion.div>
 
           {/* Profil Kartı */}
