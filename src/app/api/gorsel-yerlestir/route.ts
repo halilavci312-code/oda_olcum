@@ -68,13 +68,21 @@ export async function POST(req: NextRequest) {
 
     console.log("[proxy] n8n payload:", JSON.stringify(n8nPayload));
 
-    // 2. n8n'e asenkron istek atıp sonucu beklemiyoruz (Ateşle ve Unut / Fire-and-forget)
-    // Böylece Vercel veya sunucu timeout'a düşmeden anında yanıt verebiliriz.
-    fetch(N8N_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(n8nPayload)
-    }).catch(err => console.error("n8n fire-and-forget başarısız:", err));
+    // 2. n8n Webhook'una isteği gönder ve tamamlanmasını bekle
+    // NOT: Önceden fire-and-forget yapılıyordu ama Next.js serverless ortamında
+    // response dönüldükten sonra runtime fonksiyonu sonlandırdığı için
+    // fetch isteği n8n'e ulaşamıyordu. Şimdi await ile bekliyoruz.
+    try {
+      const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(n8nPayload)
+      });
+      console.log("[proxy] n8n webhook yanıtı:", n8nResponse.status, n8nResponse.statusText);
+    } catch (n8nErr) {
+      // n8n'e ulaşılamasa bile job oluşturuldu, frontend polling yapabilir
+      console.error("[proxy] n8n webhook hatası:", n8nErr);
+    }
 
     // 3. Frontend'e hemen Job ID dönüyoruz (Polling statüsü takip edilmesi için)
     return NextResponse.json({
