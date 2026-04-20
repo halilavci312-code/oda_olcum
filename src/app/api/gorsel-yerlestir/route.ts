@@ -69,19 +69,24 @@ export async function POST(req: NextRequest) {
     console.log("[proxy] n8n payload:", JSON.stringify(n8nPayload));
 
     // 2. n8n Webhook'una isteği gönder ve tamamlanmasını bekle
-    // NOT: Önceden fire-and-forget yapılıyordu ama Next.js serverless ortamında
-    // response dönüldükten sonra runtime fonksiyonu sonlandırdığı için
-    // fetch isteği n8n'e ulaşamıyordu. Şimdi await ile bekliyoruz.
+    // NOT: Kesin iletim sağlamak için headers'da Connection: keep-alive
     try {
+      console.log("[proxy] n8n'e istek atılıyor...");
       const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(n8nPayload)
+        headers: { 
+          "Content-Type": "application/json",
+          "Connection": "keep-alive"
+        },
+        body: JSON.stringify(n8nPayload),
+        // Timeout önlemek ve bağlantıyı kesmemek için ek parametreler gerekirse buraya
       });
-      console.log("[proxy] n8n webhook yanıtı:", n8nResponse.status, n8nResponse.statusText);
+      
+      const responseText = await n8nResponse.text(); // Yanıt içeriğini de okuyalım ki kapama garantilensin
+      console.log(`[proxy] n8n webhook yanıtı - Status: ${n8nResponse.status}, Body: ${responseText.slice(0, 100)}`);
     } catch (n8nErr) {
       // n8n'e ulaşılamasa bile job oluşturuldu, frontend polling yapabilir
-      console.error("[proxy] n8n webhook hatası:", n8nErr);
+      console.error("[proxy] n8n webhook BAĞLANTI HATASI:", n8nErr);
     }
 
     // 3. Frontend'e hemen Job ID dönüyoruz (Polling statüsü takip edilmesi için)
