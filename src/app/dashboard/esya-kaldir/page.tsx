@@ -85,12 +85,16 @@ export default function GorselYerlestirmePage() {
       answer: 'Evet! Herhangi bir mobilya ürün fotoğrafını yükleyebilirsiniz. Yapay zekamız otomatik olarak arka planı kaldırır ve ürünü oda görselinize uygun perspektif, ışık ve gölgelerle gerçekçi bir şekilde yerleştirir.'
     },
     {
-      question: 'Sistem ürün dokusunu ve rengini koruyor mu?',
-      answer: 'Kesinlikle. Yapay zekamız mobilyanızın tam dokusunu, rengini ve malzeme görünümünü korurken, ışıklandırma ve gölgeleri oda ortamına uyarlar.'
+      question: 'Renk ve kumaş değiştirme özelliği nasıl çalışır?',
+      answer: 'Görselleştirme öncesi "Kişiselleştirme Seçenekleri" panelini açarak mobilyanızın rengini ve kumaş tipini değiştirebilirsiniz. Bej, antrasit gri, kiremit, zümrüt yeşili gibi renkler ve kadife, keten, deri, şönil gibi kumaş seçenekleri mevcuttur. Yapay zeka seçimlerinize göre mobilyayı yeniden oluşturur.'
+    },
+    {
+      question: 'Renk/kumaş değişikliği sonucu gerçeğe ne kadar yakın?',
+      answer: 'Yapay zekamız seçtiğiniz renk ve kumaş dokusunu yüksek doğrulukla uygular. Kadife parlaklığı, deri yüzey dokusu gibi malzeme detaylarını gerçekçi şekilde yansıtır. Ancak ekran renk ayarlarına bağlı olarak ton farkı yaşanabilir.'
     },
     {
       question: 'Platformu kullanmak için teknik bilgiye ihtiyacım var mı?',
-      answer: 'Hiç de değil! Platformumuz sezgisel arayüzü ile kullanıcı dostu olacak şekilde tasarlanmıştır. Sadece oda fotoğrafınızı ve ürününüzü yükleyin, gerisini yapay zekaya bırakın.'
+      answer: 'Hiç de değil! Platformumuz sezgisel arayüzü ile kullanıcı dostu olacak şekilde tasarlanmıştır. Sadece oda fotoğrafınızı ve ürününüzü yükleyin, isterseniz renk ve kumaş seçin, gerisini yapay zekaya bırakın.'
     },
     {
       question: 'Hangi dosya formatları destekleniyor?',

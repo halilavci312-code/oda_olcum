@@ -16,6 +16,14 @@ const faqs = [
     answer: "Ölçümlerimiz %90-95 oranında doğruluk payına sahiptir. Ancak kamera lensi distorsiyonu ve ışık gibi faktörlerden dolayı cm bazında sapmalar yaşanabilir. Tahminlerimiz referans niteliğinde olup kritik kesim/inşaat işlemlerinden önce teyit edilmesi önerilir."
   },
   {
+    question: "Evinde Gör (Görsel Yerleştirme) özelliği nasıl çalışır?",
+    answer: "Odanızın fotoğrafını ve yerleştirmek istediğiniz mobilyanın görselini yüklersiniz. Yapay zekamız perspektif, ışıklandırma ve gölge analizini otomatik olarak yaparak mobilyayı odanıza gerçekçi bir şekilde entegre eder. Sonuç birkaç saniye içinde hazır olur."
+  },
+  {
+    question: "Renk ve kumaş değiştirme özelliği nedir?",
+    answer: "Görsel yerleştirme sırasında mobilyanızın renk ve kumaş tipini değiştirebilirsiniz. Bej, antrasit gri, kiremit, zümrüt yeşili gibi popüler renkler arasından seçim yapabilir; kadife, keten, deri, şönil gibi farklı kumaş dokuları ile mobilyanızın nasıl görüneceğini keşfedebilirsiniz."
+  },
+  {
     question: "Fotoğraflarım kaydediliyor mu?",
     answer: "Yüklediğiniz fotoğraflar sadece ölçüm analizi sırasında işlenir ve profilinizde sizin görebilmeniz için saklanır. Dilediğiniz zaman hesabınızdan tüm görselleri silebilirsiniz. Müşteri fotoğrafları açık rıza olmadan genel yapay zeka eğitimlerimizde kullanılmaz."
   },
