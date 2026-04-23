@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white dark:bg-zinc-950 font-[family-name:var(--font-geist-sans)] transition-colors duration-300">
+    <main className="min-h-screen bg-white dark:bg-zinc-950 font-sans transition-colors duration-300">
       {/* ── Navigation ─────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md transition-colors duration-300">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">

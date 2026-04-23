@@ -132,7 +132,7 @@ export function BackgroundPaths({ title = "Background Paths" }: { title?: string
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
               </AuthModal>
-              <AuthModal redirectUrl="/dashboard">
+              <AuthModal redirectUrl="/dashboard/esya-kaldir">
                 <button
                   className="group inline-flex w-full sm:w-auto items-center justify-center gap-3 px-8 py-4 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white font-semibold text-[15px] transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                 >
