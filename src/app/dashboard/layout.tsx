@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     setMounted(true);
     // TEMPORARILY DISABLED AUTH CHECK
-    setUser({ email: "Misafir Kullanıcı (Giriş Devre Dışı)", id: "guest-id" } as any);
+    setUser({ email: "Ewos Kullanıcı", id: "guest-id" } as any);
     setAuthLoading(false);
     
     // Auth logic temporarily commented out:
