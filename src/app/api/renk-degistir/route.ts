@@ -4,13 +4,14 @@ import { fal } from "@fal-ai/client";
 
 export const maxDuration = 60;
 
-// ─── HSL hedef değerleri (programatik renk değişimi için) ───
-// H: 0-1 (hue), S: 0-1 (saturation), lOffset: parlaklık ofseti
-const colorHSL: Record<string, { h: number; s: number; lOffset: number }> = {
-  bej:      { h: 35 / 360,  s: 0.35,  lOffset: 0.02 },
-  antrasit: { h: 0,          s: 0.04,  lOffset: -0.30 },
-  kiremit:  { h: 22 / 360,  s: 0.55,  lOffset: -0.05 },
-  zumrut:   { h: 155 / 360, s: 0.70,  lOffset: -0.12 },
+// ─── Hedef RGB renkleri (Luminans tabanlı renk eşleme için) ───
+// r,g,b: hedef rengin orta ton değeri
+// blend: orijinal ile karışım oranı (1.0 = tamamen yeni renk, 0.5 = %50 karışım)
+const colorTargetRGB: Record<string, { r: number; g: number; b: number; blend: number }> = {
+  bej:      { r: 205, g: 185, b: 155, blend: 0.78 },
+  antrasit: { r: 50,  g: 50,  b: 52,  blend: 0.82 },
+  kiremit:  { r: 170, g: 95,  b: 50,  blend: 0.78 },
+  zumrut:   { r: 10,  g: 90,  b: 60,  blend: 0.78 },
 };
 
 // ─── AI inpainting prompt'ları (sadece kumaş değişiminde kullanılır) ───
@@ -27,46 +28,6 @@ const fabricPrompts: Record<string, string> = {
   deri: "leather",
   sonil: "chenille",
 };
-
-// ─── HSL Dönüşüm Yardımcıları ───
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
-    }
-  }
-  return [h, s, l];
-}
-
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  if (s === 0) {
-    const v = Math.round(l * 255);
-    return [v, v, v];
-  }
-  const hue2rgb = (p: number, q: number, t: number) => {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  };
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  return [
-    Math.round(hue2rgb(p, q, h + 1 / 3) * 255),
-    Math.round(hue2rgb(p, q, h) * 255),
-    Math.round(hue2rgb(p, q, h - 1 / 3) * 255),
-  ];
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -104,23 +65,25 @@ export async function POST(req: NextRequest) {
 
     // ════════════════════════════════════════════════════════════════
     // YÖNTEM SEÇİMİ:
-    // - Sadece RENK değişimi → Programatik HSL kaydırma (yapı %100 korunur)
+    // - Sadece RENK → Luminans tabanlı renk eşleme (yapı %100 korunur)
     // - KUMAŞ değişimi → AI inpainting (doku değişimi gerektirir)
     // ════════════════════════════════════════════════════════════════
 
     if (!hasFabricChange && hasColorChange) {
-      // ─── PROGRAMMATIK RENK DEĞİŞİMİ ───
-      // Avantaj: Yastık sayısı, şekil, gölge, detaylar tamamen korunur
-      console.log("[renk-degistir] Programatik HSL renk değişimi başlatılıyor...");
+      // ─── PROGRAMMATIK RENK DEĞİŞİMİ (Luminans tabanlı) ───
+      // Gölgeler koyu kalır, aydınlık yerler açık kalır, doku korunur
+      console.log("[renk-degistir] Luminans tabanlı renk değişimi başlatılıyor...");
       
-      const target = colorHSL[color];
+      const target = colorTargetRGB[color];
       if (!target) {
         return NextResponse.json({ error: "Geçersiz renk" }, { status: 400 });
       }
 
+      // Hedef rengin luminansını hesapla
+      const targetLum = 0.299 * target.r + 0.587 * target.g + 0.114 * target.b;
+
       const Jimp = (await import("jimp")).default;
       
-      // Sonuç görselini ve cutout'u (maske) yükle
       const [resultImage, cutoutImage] = await Promise.all([
         Jimp.read(job.result_url),
         Jimp.read(job.mask_url),
@@ -129,10 +92,8 @@ export async function POST(req: NextRequest) {
       const w = resultImage.getWidth();
       const h = resultImage.getHeight();
 
-      // Cutout boyutu farklıysa, sonuç görseli boyutuna resize et
       if (cutoutImage.getWidth() !== w || cutoutImage.getHeight() !== h) {
         cutoutImage.resize(w, h);
-        console.log(`[renk-degistir] Cutout ${w}x${h} boyutuna resize edildi`);
       }
 
       let changedPixels = 0;
@@ -141,19 +102,38 @@ export async function POST(req: NextRequest) {
         for (let x = 0; x < w; x++) {
           const cutoutPixel = Jimp.intToRGBA(cutoutImage.getPixelColor(x, y));
           
-          // Alpha > 10 ise bu piksel mobilyanın parçası
-          if (cutoutPixel.a > 10) {
-            const origPixel = Jimp.intToRGBA(resultImage.getPixelColor(x, y));
-            const [, , origL] = rgbToHsl(origPixel.r, origPixel.g, origPixel.b);
+          if (cutoutPixel.a <= 10) continue; // Şeffaf piksel, atla
+          
+          const origPixel = Jimp.intToRGBA(resultImage.getPixelColor(x, y));
+          
+          // Orijinal pikselin luminansını hesapla
+          const origLum = 0.299 * origPixel.r + 0.587 * origPixel.g + 0.114 * origPixel.b;
+          
+          // Luminans oranı ile hedef rengi ölçeklendir
+          // Bu sayede gölgeler koyu, aydınlık yerler açık kalır
+          const ratio = origLum / Math.max(targetLum, 1);
+          
+          let newR = Math.round(target.r * ratio);
+          let newG = Math.round(target.g * ratio);
+          let newB = Math.round(target.b * ratio);
+          
+          // Clamp 0-255
+          newR = Math.min(255, Math.max(0, newR));
+          newG = Math.min(255, Math.max(0, newG));
+          newB = Math.min(255, Math.max(0, newB));
+          
+          // Alpha kanalını kullanarak yumuşak kenar geçişi sağla
+          const alphaNorm = cutoutPixel.a / 255;
+          const blendStrength = target.blend * alphaNorm;
+          
+          // Orijinal ile yeni rengi karıştır
+          const finalR = Math.round(origPixel.r * (1 - blendStrength) + newR * blendStrength);
+          const finalG = Math.round(origPixel.g * (1 - blendStrength) + newG * blendStrength);
+          const finalB = Math.round(origPixel.b * (1 - blendStrength) + newB * blendStrength);
 
-            // Hedef HSL: Hue ve Saturation hedeften, Lightness orijinalden (+ offset)
-            const newL = Math.max(0, Math.min(1, origL + target.lOffset));
-            const [nr, ng, nb] = hslToRgb(target.h, target.s, newL);
-
-            const newColor = Jimp.rgbaToInt(nr, ng, nb, origPixel.a);
-            resultImage.setPixelColor(newColor, x, y);
-            changedPixels++;
-          }
+          const newColor = Jimp.rgbaToInt(finalR, finalG, finalB, origPixel.a);
+          resultImage.setPixelColor(newColor, x, y);
+          changedPixels++;
         }
       }
 
@@ -166,7 +146,7 @@ export async function POST(req: NextRequest) {
       const file = new File([blob], "recolored.jpg", { type: "image/jpeg" });
       const uploadedUrl = await fal.storage.upload(file);
 
-      console.log("[renk-degistir] Programatik renk değişimi tamamlandı:", uploadedUrl);
+      console.log("[renk-degistir] Renk değişimi tamamlandı:", uploadedUrl);
       return NextResponse.json({ success: true, result_url: uploadedUrl });
 
     } else {
