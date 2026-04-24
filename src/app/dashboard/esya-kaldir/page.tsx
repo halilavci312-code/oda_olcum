@@ -13,8 +13,8 @@ type StoreState = {
   productPreview: string | null;
   isLoading: boolean;
   resultImage: string | null;
-  selectedColor: string;
-  selectedFabric: string;
+  currentJobId: string | null;
+  originalResultImage: string | null;
 };
 
 let globalState: StoreState = {
@@ -24,8 +24,8 @@ let globalState: StoreState = {
   productPreview: null,
   isLoading: false,
   resultImage: null,
-  selectedColor: "orijinal",
-  selectedFabric: "orijinal",
+  currentJobId: null,
+  originalResultImage: null,
 };
 
 let listeners: Array<() => void> = [];
@@ -45,7 +45,7 @@ const store = {
 
 export default function GorselYerlestirmePage() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const { roomImage, productImage, roomPreview, productPreview, isLoading, resultImage, selectedColor, selectedFabric } = state;
+  const { roomImage, productImage, roomPreview, productPreview, isLoading, resultImage, currentJobId, originalResultImage } = state;
 
   const setRoomImage = (file: File | null) => store.setState({ roomImage: file });
   const setProductImage = (file: File | null) => store.setState({ productImage: file });
@@ -53,8 +53,8 @@ export default function GorselYerlestirmePage() {
   const setProductPreview = (s: string | null) => store.setState({ productPreview: s });
   const setIsLoading = (loading: boolean) => store.setState({ isLoading: loading });
   const setResultImage = (s: string | null) => store.setState({ resultImage: s });
-  const setSelectedColor = (s: string) => store.setState({ selectedColor: s });
-  const setSelectedFabric = (s: string) => store.setState({ selectedFabric: s });
+  const setCurrentJobId = (s: string | null) => store.setState({ currentJobId: s });
+  const setOriginalResultImage = (s: string | null) => store.setState({ originalResultImage: s });
 
   const colors = [
     { id: "orijinal", name: "Orijinal", hex: "linear-gradient(135deg,#e5e7eb,#d1d5db)", border: "#9ca3af" },
@@ -72,8 +72,51 @@ export default function GorselYerlestirmePage() {
     { id: "sonil", name: "Şönil", icon: "🧵", desc: "Peluş & konforlu" }
   ];
 
-  const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false);
+  const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  
+  // Recolor States
+  const [selectedColor, setSelectedColor] = useState("orijinal");
+  const [selectedFabric, setSelectedFabric] = useState("orijinal");
+  const [isRecoloring, setIsRecoloring] = useState(false);
+  const [recolorCache, setRecolorCache] = useState<Record<string, string>>({});
+
+  const handleRecolor = async (color: string, fabric: string) => {
+    setSelectedColor(color);
+    setSelectedFabric(fabric);
+
+    if (color === "orijinal" && fabric === "orijinal") {
+      setResultImage(originalResultImage);
+      return;
+    }
+
+    const cacheKey = `${color}_${fabric}`;
+    if (recolorCache[cacheKey]) {
+      setResultImage(recolorCache[cacheKey]);
+      return;
+    }
+
+    setIsRecoloring(true);
+    try {
+      const res = await fetch("/api/renk-degistir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_id: currentJobId, color, fabric })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Renk değiştirme başarısız oldu");
+      
+      setResultImage(data.result_url);
+      setRecolorCache(prev => ({ ...prev, [cacheKey]: data.result_url }));
+    } catch (err: any) {
+      toast.error(err.message);
+      // Hata olursa orijinale geri dönme seçeneği
+      if (!resultImage) setResultImage(originalResultImage);
+    } finally {
+      setIsRecoloring(false);
+    }
+  };
 
   const faqs = [
     {
@@ -131,6 +174,11 @@ export default function GorselYerlestirmePage() {
     clearImage(setRoomImage, setRoomPreview, roomInputRef);
     clearImage(setProductImage, setProductPreview, productInputRef);
     setResultImage(null);
+    setCurrentJobId(null);
+    setOriginalResultImage(null);
+    setSelectedColor("orijinal");
+    setSelectedFabric("orijinal");
+    setRecolorCache({});
   };
 
   const uploadFile = async (file: File): Promise<string> => {
@@ -169,9 +217,7 @@ export default function GorselYerlestirmePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           oda_resim_url: odaResimUrl,
-          urun_resim_url: urunResimUrl,
-          color: selectedColor === "orijinal" ? "" : selectedColor,
-          fabric: selectedFabric === "orijinal" ? "" : selectedFabric
+          urun_resim_url: urunResimUrl
         })
       });
 
@@ -219,6 +265,8 @@ export default function GorselYerlestirmePage() {
 
       if (finalImageUrl) {
         setResultImage(finalImageUrl);
+        setOriginalResultImage(finalImageUrl);
+        setCurrentJobId(initData.job_id);
         toast.success("Fotoğraf başarıyla oluşturuldu!");
       }
     } catch (err: any) {
@@ -410,138 +458,7 @@ export default function GorselYerlestirmePage() {
                 </div>
               </div>
 
-              {/* ═══════ KİŞİSELLEŞTİRME SEÇENEKLERİ (AÇILIR MENÜ) ═══════ */}
-              <div className={`mb-8 bg-white dark:bg-zinc-900/80 rounded-2xl border transition-all duration-300 overflow-hidden ${isCustomizationOpen
-                  ? "border-indigo-200 dark:border-indigo-500/50 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]"
-                  : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 shadow-sm"
-                }`}>
-                <button
-                  type="button"
-                  onClick={() => setIsCustomizationOpen(!isCustomizationOpen)}
-                  className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isCustomizationOpen ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>
-                      <Palette size={18} />
-                    </div>
-                    <div>
-                      <span className={`block text-[15px] font-semibold transition-colors ${isCustomizationOpen ? "text-indigo-900 dark:text-indigo-300" : "text-gray-900 dark:text-zinc-200"}`}>
-                        Kişiselleştirme Seçenekleri
-                      </span>
-                      <span className="block text-[12px] font-light text-gray-500 dark:text-zinc-400 mt-0.5">
-                        Renk ve kumaş tipini değiştirin
-                      </span>
-                    </div>
-                  </div>
-                  <div className={`flex-shrink-0 transition-transform duration-300 ${isCustomizationOpen ? "rotate-180 text-indigo-600 dark:text-indigo-400" : "text-gray-400 dark:text-zinc-500"}`}>
-                    <ChevronDown size={20} />
-                  </div>
-                </button>
 
-                <AnimatePresence>
-                  {isCustomizationOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-zinc-800/50">
-                        {/* ═══════ RENK SEÇİMİ ═══════ */}
-                        <div className="mb-8 mt-4">
-                          <div className="flex items-center gap-2 mb-4">
-                            <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Renk Seçimi</span>
-                            {selectedColor !== "orijinal" && (
-                              <span className="ml-auto text-xs text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-500/20">
-                                {colors.find(c => c.id === selectedColor)?.name}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-3">
-                            {colors.map((c) => (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onClick={() => setSelectedColor(c.id)}
-                                className={`group relative flex flex-col items-center gap-1.5 transition-all duration-200 ${selectedColor === c.id ? "scale-110" : "hover:scale-105"
-                                  }`}
-                                title={c.name}
-                              >
-                                <div
-                                  className={`w-10 h-10 rounded-full shadow-md transition-all duration-200 flex items-center justify-center ${selectedColor === c.id
-                                      ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900 ring-indigo-500 shadow-lg"
-                                      : "ring-1 ring-gray-200 dark:ring-zinc-700 hover:ring-gray-300 dark:hover:ring-zinc-600"
-                                    }`}
-                                  style={{ background: c.hex }}
-                                >
-                                  {selectedColor === c.id && (
-                                    <Check size={16} className={`${c.id === "antrasit" || c.id === "zumrut" ? "text-white" : "text-gray-700"
-                                      } drop-shadow-sm`} strokeWidth={3} />
-                                  )}
-                                </div>
-                                <span className={`text-[10px] font-medium transition-colors ${selectedColor === c.id
-                                    ? "text-indigo-600 dark:text-indigo-400"
-                                    : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300"
-                                  }`}>
-                                  {c.name}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* ═══════ KUMAŞ SEÇİMİ ═══════ */}
-                        <div>
-                          <div className="flex items-center gap-2 mb-4">
-                            <Shirt size={16} className="text-teal-500 dark:text-teal-400" />
-                            <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Kumaş Tipi</span>
-                            {selectedFabric !== "orijinal" && (
-                              <span className="ml-auto text-xs text-teal-600 dark:text-teal-400 font-medium bg-teal-50 dark:bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-100 dark:border-teal-500/20">
-                                {fabrics.find(f => f.id === selectedFabric)?.name}
-                              </span>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                            {fabrics.map((f) => (
-                              <button
-                                key={f.id}
-                                type="button"
-                                onClick={() => setSelectedFabric(f.id)}
-                                className={`relative px-4 py-3 rounded-xl border text-left transition-all duration-200 group ${selectedFabric === f.id
-                                    ? "border-teal-400 dark:border-teal-500/60 bg-teal-50/60 dark:bg-teal-500/10 shadow-sm ring-1 ring-teal-200 dark:ring-teal-500/30"
-                                    : "border-gray-100 dark:border-zinc-800/80 bg-gray-50/50 dark:bg-zinc-950/50 hover:border-gray-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900"
-                                  }`}
-                              >
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-lg leading-none">{f.icon}</span>
-                                  <span className={`text-sm font-semibold transition-colors ${selectedFabric === f.id
-                                      ? "text-teal-700 dark:text-teal-300"
-                                      : "text-gray-700 dark:text-zinc-300"
-                                    }`}>
-                                    {f.name}
-                                  </span>
-                                </div>
-                                <span className={`text-[11px] font-light transition-colors ${selectedFabric === f.id
-                                    ? "text-teal-600/70 dark:text-teal-400/70"
-                                    : "text-gray-400 dark:text-zinc-500"
-                                  }`}>
-                                  {f.desc}
-                                </span>
-                                {selectedFabric === f.id && (
-                                  <div className="absolute top-2 right-2">
-                                    <Check size={14} className="text-teal-500 dark:text-teal-400" strokeWidth={3} />
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
 
               <div className="max-w-md mx-auto">
                 <button
@@ -592,17 +509,160 @@ export default function GorselYerlestirmePage() {
 
             <div className="relative w-full max-w-3xl rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-800 shadow-md bg-gray-50 dark:bg-zinc-950 mb-8">
               <img src={resultImage} alt="Oluşturulan Görsel" className="w-full h-auto object-cover" />
-              <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full border border-white/10 text-white text-[12px] font-medium shadow-sm">
+              {isRecoloring && (
+                <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center z-10 transition-all">
+                  <Loader2 className="w-10 h-10 text-indigo-500 dark:text-indigo-400 animate-spin mb-3" />
+                  <span className="text-sm font-medium text-gray-800 dark:text-zinc-200">Renk uygulanıyor...</span>
+                </div>
+              )}
+              <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full border border-white/10 text-white text-[12px] font-medium shadow-sm z-20">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-300" /> AI Generated
               </div>
             </div>
 
-            <button
-              onClick={handleReset}
-              className="px-6 py-2.5 rounded-full border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100 transition-all text-[14px] font-semibold flex items-center justify-center gap-2"
-            >
-              Yeni Görsel Oluştur <ArrowRight className="w-4 h-4" />
-            </button>
+            {/* ═══════ KİŞİSELLEŞTİRME SEÇENEKLERİ (SONUÇ EKRANI) ═══════ */}
+            <div className={`w-full max-w-3xl mb-8 bg-white dark:bg-zinc-900/80 rounded-2xl border transition-all duration-300 overflow-hidden ${isCustomizationOpen
+                ? "border-indigo-200 dark:border-indigo-500/50 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]"
+                : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 shadow-sm"
+              }`}>
+              <button
+                type="button"
+                onClick={() => setIsCustomizationOpen(!isCustomizationOpen)}
+                className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isCustomizationOpen ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>
+                    <Palette size={18} />
+                  </div>
+                  <div>
+                    <span className={`block text-[15px] font-semibold transition-colors ${isCustomizationOpen ? "text-indigo-900 dark:text-indigo-300" : "text-gray-900 dark:text-zinc-200"}`}>
+                      Renk & Kumaş Değiştir
+                    </span>
+                    <span className="block text-[12px] font-light text-gray-500 dark:text-zinc-400 mt-0.5">
+                      Sadece mobilyanın rengi değişir, odanız aynı kalır
+                    </span>
+                  </div>
+                </div>
+                <div className={`flex-shrink-0 transition-transform duration-300 ${isCustomizationOpen ? "rotate-180 text-indigo-600 dark:text-indigo-400" : "text-gray-400 dark:text-zinc-500"}`}>
+                  <ChevronDown size={20} />
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {isCustomizationOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-zinc-800/50">
+                      {/* ═══════ RENK SEÇİMİ ═══════ */}
+                      <div className="mb-8 mt-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Renk Seçimi</span>
+                          {selectedColor !== "orijinal" && (
+                            <span className="ml-auto text-xs text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-500/20">
+                              {colors.find(c => c.id === selectedColor)?.name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          {colors.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handleRecolor(c.id, selectedFabric)}
+                              disabled={isRecoloring}
+                              className={`group relative flex flex-col items-center gap-1.5 transition-all duration-200 ${selectedColor === c.id ? "scale-110" : "hover:scale-105"
+                                } ${isRecoloring ? "opacity-50 cursor-not-allowed" : ""}`}
+                              title={c.name}
+                            >
+                              <div
+                                className={`w-10 h-10 rounded-full shadow-md transition-all duration-200 flex items-center justify-center ${selectedColor === c.id
+                                    ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900 ring-indigo-500 shadow-lg"
+                                    : "ring-1 ring-gray-200 dark:ring-zinc-700 hover:ring-gray-300 dark:hover:ring-zinc-600"
+                                  }`}
+                                style={{ background: c.hex }}
+                              >
+                                {selectedColor === c.id && (
+                                  <Check size={16} className={`${c.id === "antrasit" || c.id === "zumrut" ? "text-white" : "text-gray-700"
+                                    } drop-shadow-sm`} strokeWidth={3} />
+                                )}
+                              </div>
+                              <span className={`text-[10px] font-medium transition-colors ${selectedColor === c.id
+                                  ? "text-indigo-600 dark:text-indigo-400"
+                                  : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300"
+                                }`}>
+                                {c.name}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* ═══════ KUMAŞ SEÇİMİ ═══════ */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Shirt size={16} className="text-teal-500 dark:text-teal-400" />
+                          <span className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Kumaş Tipi</span>
+                          {selectedFabric !== "orijinal" && (
+                            <span className="ml-auto text-xs text-teal-600 dark:text-teal-400 font-medium bg-teal-50 dark:bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-100 dark:border-teal-500/20">
+                              {fabrics.find(f => f.id === selectedFabric)?.name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                          {fabrics.map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => handleRecolor(selectedColor, f.id)}
+                              disabled={isRecoloring}
+                              className={`relative px-4 py-3 rounded-xl border text-left transition-all duration-200 group ${selectedFabric === f.id
+                                  ? "border-teal-400 dark:border-teal-500/60 bg-teal-50/60 dark:bg-teal-500/10 shadow-sm ring-1 ring-teal-200 dark:ring-teal-500/30"
+                                  : "border-gray-100 dark:border-zinc-800/80 bg-gray-50/50 dark:bg-zinc-950/50 hover:border-gray-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900"
+                                } ${isRecoloring ? "opacity-50 cursor-not-allowed" : ""}`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-lg leading-none">{f.icon}</span>
+                                <span className={`text-sm font-semibold transition-colors ${selectedFabric === f.id
+                                    ? "text-teal-700 dark:text-teal-300"
+                                    : "text-gray-700 dark:text-zinc-300"
+                                  }`}>
+                                  {f.name}
+                                </span>
+                              </div>
+                              <span className={`text-[11px] font-light transition-colors ${selectedFabric === f.id
+                                  ? "text-teal-600/70 dark:text-teal-400/70"
+                                  : "text-gray-400 dark:text-zinc-500"
+                                }`}>
+                                {f.desc}
+                              </span>
+                              {selectedFabric === f.id && (
+                                <div className="absolute top-2 right-2">
+                                  <Check size={14} className="text-teal-500 dark:text-teal-400" strokeWidth={3} />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleReset}
+                className="px-6 py-2.5 rounded-full border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100 transition-all text-[14px] font-semibold flex items-center justify-center gap-2"
+              >
+                Yeni Görsel Oluştur <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

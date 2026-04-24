@@ -24,32 +24,22 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("[proxy] Gelen istek:", JSON.stringify(body));
 
-    const { oda_resim_url, urun_resim_url, color, fabric } = body;
+    const { oda_resim_url, urun_resim_url } = body;
 
     if (!oda_resim_url || !urun_resim_url) {
       return NextResponse.json({ error: "Oda veya Ürün görseli eksik" }, { status: 400 });
     }
 
-    // Haritalama işlemi — Türkçe seçimi İngilizce prompt'a çevir
-    const colorPrompt = textureMap[color] || "";
-    const fabricPrompt = textureMap[fabric] || "";
-
-    // Birleşik prompt: renk + kumaş
-    const parts: string[] = [];
-    if (colorPrompt) parts.push(colorPrompt);
-    if (fabricPrompt) parts.push(fabricPrompt);
-    const combinedPrompt = parts.join(", ");
-
-    // 1. Supabase'e Job oluştur (texture_prompt dahil)
+    // 1. Supabase'e Job oluştur (Sadece ana görseller, renk/kumaş yok)
     const { data: job, error: insertError } = await supabase
       .from("generation_jobs")
       .insert({
         status: "processing",
         room_image: oda_resim_url,
         product_image: urun_resim_url,
-        color: color || null,
-        fabric: fabric || null,
-        texture_prompt: combinedPrompt || null
+        color: null,
+        fabric: null,
+        texture_prompt: null
       })
       .select("id")
       .single();
@@ -62,8 +52,7 @@ export async function POST(req: NextRequest) {
     const n8nPayload = {
       job_id: job.id,
       oda_resim_url,
-      urun_resim_url,
-      texture_prompt: combinedPrompt
+      urun_resim_url
     };
 
     console.log("[proxy] n8n payload:", JSON.stringify(n8nPayload));
