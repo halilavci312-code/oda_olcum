@@ -94,19 +94,20 @@ export async function POST(req: NextRequest) {
     const processedMaskUrl = await createBinaryMask(job.mask_url);
     console.log("[renk-degistir] Maske yüklendi:", processedMaskUrl);
 
-    // Prompt oluştur: sadece yüzey malzemesi + renk, obje ismi yok
+    // Prompt oluştur: Çok sade tutarak AI'ın şekli değiştirmesini (yastık ekleme vb.) önlüyoruz
+    // "upholstery" veya "surface" gibi kelimeler kullanmıyoruz ki fazladan doku veya nesne üretmesin
     const colorText = colorPrompts[color] || "";
     const fabricText = fabricPrompts[fabric] || "";
     
     let prompt = "";
     if (colorText && fabricText) {
-      prompt = `${colorText} ${fabricText} upholstery surface texture`;
+      prompt = `solid ${colorText} ${fabricText} material`;
     } else if (colorText) {
-      prompt = `${colorText} fabric upholstery surface`;
+      prompt = `solid ${colorText} color material`;
     } else if (fabricText) {
-      prompt = `${fabricText} upholstery surface texture`;
+      prompt = `${fabricText} material`;
     } else {
-      prompt = "same upholstery surface";
+      prompt = "exact same material";
     }
 
     console.log("[renk-degistir] Prompt:", prompt);
