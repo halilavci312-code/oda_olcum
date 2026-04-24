@@ -61,8 +61,7 @@ export async function POST(req: NextRequest) {
       input: {
         prompt,
         image_url: job.result_url,
-        mask_url: job.mask_url,
-        output_format: "jpeg"
+        mask_url: job.mask_url
       }
     });
     
