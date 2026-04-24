@@ -53,15 +53,33 @@ export async function POST(req: NextRequest) {
     const colorText = colorPrompts[color] || "";
     const fabricText = fabricPrompts[fabric] || "";
     
-    // 2. Fal.ai Inpainting İsteği
-    const prompt = `Furniture upholstery in ${colorText} ${fabricText}, photorealistic, same lighting and perspective, high quality texture detail`;
+    // 2. Maskeyi indirip tersine çevirme (Jimp)
+    // Fal AI "White = Inpaint", "Black = Preserve" olarak çalışır. Bria maskesi ters olduğu için düzeltiyoruz.
+    let processedMaskUrl = job.mask_url;
+    try {
+      console.log("[renk-degistir] Maske işleniyor...");
+      const Jimp = (await import("jimp")).default;
+      const maskImage = await Jimp.read(job.mask_url);
+      
+      // Maske transparan veya ters olabilir. Standart bir tersine çevirme (invert) uyguluyoruz.
+      maskImage.invert();
+      
+      processedMaskUrl = await maskImage.getBase64Async(Jimp.MIME_PNG);
+    } catch (err) {
+      console.error("[renk-degistir] Maske işlenirken hata oluştu:", err);
+      // Hata olursa orijinal URL ile devam et
+    }
+
+    // 3. Fal.ai Inpainting İsteği
+    // Metin oluşmasını ve objenin bozulmasını engellemek için prompt'u sadeleştiriyoruz.
+    const prompt = `A piece of furniture completely upholstered in ${colorText} ${fabricText}, maintaining its exact shape and underlying structure`;
     
     console.log("[renk-degistir] Fal.ai inpainting başlatılıyor...");
     const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
       input: {
         prompt,
         image_url: job.result_url,
-        mask_url: job.mask_url
+        mask_url: processedMaskUrl
       }
     });
     
