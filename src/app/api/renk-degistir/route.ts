@@ -4,7 +4,16 @@ import { fal } from "@fal-ai/client";
 
 export const maxDuration = 60;
 
-// Renk -> sadece yüzey rengi tarifi (kısa ve net, obje referansı yok)
+// ─── HSL hedef değerleri (programatik renk değişimi için) ───
+// H: 0-1 (hue), S: 0-1 (saturation), lOffset: parlaklık ofseti
+const colorHSL: Record<string, { h: number; s: number; lOffset: number }> = {
+  bej:      { h: 35 / 360,  s: 0.35,  lOffset: 0.02 },
+  antrasit: { h: 0,          s: 0.04,  lOffset: -0.30 },
+  kiremit:  { h: 22 / 360,  s: 0.55,  lOffset: -0.05 },
+  zumrut:   { h: 155 / 360, s: 0.70,  lOffset: -0.12 },
+};
+
+// ─── AI inpainting prompt'ları (sadece kumaş değişiminde kullanılır) ───
 const colorPrompts: Record<string, string> = {
   bej: "beige cream",
   antrasit: "dark charcoal grey",
@@ -12,13 +21,52 @@ const colorPrompts: Record<string, string> = {
   zumrut: "emerald green",
 };
 
-// Kumaş -> sadece yüzey dokusu tarifi (kısa ve net)
 const fabricPrompts: Record<string, string> = {
   kadife: "velvet",
   keten: "linen",
   deri: "leather",
   sonil: "chenille",
 };
+
+// ─── HSL Dönüşüm Yardımcıları ───
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return [h, s, l];
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  if (s === 0) {
+    const v = Math.round(l * 255);
+    return [v, v, v];
+  }
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return [
+    Math.round(hue2rgb(p, q, h + 1 / 3) * 255),
+    Math.round(hue2rgb(p, q, h) * 255),
+    Math.round(hue2rgb(p, q, h - 1 / 3) * 255),
+  ];
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,112 +89,147 @@ export async function POST(req: NextRequest) {
 
     if (!job.result_url || !job.mask_url) {
       return NextResponse.json(
-        { error: "Maske veya sonuç görseli henüz hazır değil. Lütfen n8n akışının maske ürettiğinden emin olun." },
+        { error: "Maske veya sonuç görseli henüz hazır değil." },
         { status: 400 }
       );
     }
 
-    // Orijinale dönmek isteniyorsa direkt mevcut result_url dön
+    // Orijinale dönmek isteniyorsa
     if (color === "orijinal" && fabric === "orijinal") {
       return NextResponse.json({ success: true, result_url: job.result_url });
     }
 
-    const colorText = colorPrompts[color] || "";
-    const fabricText = fabricPrompts[fabric] || "";
-    
-    // 2. Bria cutout'unu binary maskeye çevirme
-    // ÖNEMLİ: Bria'dan gelen mask_url bir siyah-beyaz maske DEĞİL!
-    // Şeffaf arka planlı renkli PNG cutout (kesilmiş mobilya görseli).
-    // Fal AI fill ise binary maske istiyor:
-    //   - Beyaz = değişecek alan (inpaint)
-    //   - Siyah = korunacak alan (preserve)
-    // Bu yüzden alpha kanalından binary maske oluşturuyoruz:
-    //   - Alpha > 0 (opak, mobilya var) → Beyaz piksel
-    //   - Alpha = 0 (şeffaf, arka plan) → Siyah piksel
-    let processedMaskUrl = job.mask_url;
-    try {
-      console.log("[renk-degistir] Bria cutout'undan binary maske oluşturuluyor...");
+    const hasFabricChange = fabric && fabric !== "orijinal";
+    const hasColorChange = color && color !== "orijinal";
+
+    // ════════════════════════════════════════════════════════════════
+    // YÖNTEM SEÇİMİ:
+    // - Sadece RENK değişimi → Programatik HSL kaydırma (yapı %100 korunur)
+    // - KUMAŞ değişimi → AI inpainting (doku değişimi gerektirir)
+    // ════════════════════════════════════════════════════════════════
+
+    if (!hasFabricChange && hasColorChange) {
+      // ─── PROGRAMMATIK RENK DEĞİŞİMİ ───
+      // Avantaj: Yastık sayısı, şekil, gölge, detaylar tamamen korunur
+      console.log("[renk-degistir] Programatik HSL renk değişimi başlatılıyor...");
+      
+      const target = colorHSL[color];
+      if (!target) {
+        return NextResponse.json({ error: "Geçersiz renk" }, { status: 400 });
+      }
+
       const Jimp = (await import("jimp")).default;
-      const cutoutImage = await Jimp.read(job.mask_url);
       
-      const width = cutoutImage.getWidth();
-      const height = cutoutImage.getHeight();
-      
-      // Orijinal görsel ile aynı boyutta yeni bir siyah-beyaz maske oluştur
-      const binaryMask = new Jimp(width, height, 0x000000FF); // Tamamen siyah (RGBA: 0,0,0,255)
-      
-      let opaquePixels = 0;
-      
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const pixel = Jimp.intToRGBA(cutoutImage.getPixelColor(x, y));
+      // Sonuç görselini ve cutout'u (maske) yükle
+      const [resultImage, cutoutImage] = await Promise.all([
+        Jimp.read(job.result_url),
+        Jimp.read(job.mask_url),
+      ]);
+
+      const w = resultImage.getWidth();
+      const h = resultImage.getHeight();
+
+      // Cutout boyutu farklıysa, sonuç görseli boyutuna resize et
+      if (cutoutImage.getWidth() !== w || cutoutImage.getHeight() !== h) {
+        cutoutImage.resize(w, h);
+        console.log(`[renk-degistir] Cutout ${w}x${h} boyutuna resize edildi`);
+      }
+
+      let changedPixels = 0;
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const cutoutPixel = Jimp.intToRGBA(cutoutImage.getPixelColor(x, y));
           
-          // Alpha > 10 ise bu piksel mobilyanın parçası (küçük threshold ile noise filtrele)
-          if (pixel.a > 10) {
-            binaryMask.setPixelColor(0xFFFFFFFF, x, y); // Beyaz piksel (RGBA: 255,255,255,255)
-            opaquePixels++;
+          // Alpha > 10 ise bu piksel mobilyanın parçası
+          if (cutoutPixel.a > 10) {
+            const origPixel = Jimp.intToRGBA(resultImage.getPixelColor(x, y));
+            const [, , origL] = rgbToHsl(origPixel.r, origPixel.g, origPixel.b);
+
+            // Hedef HSL: Hue ve Saturation hedeften, Lightness orijinalden (+ offset)
+            const newL = Math.max(0, Math.min(1, origL + target.lOffset));
+            const [nr, ng, nb] = hslToRgb(target.h, target.s, newL);
+
+            const newColor = Jimp.rgbaToInt(nr, ng, nb, origPixel.a);
+            resultImage.setPixelColor(newColor, x, y);
+            changedPixels++;
           }
         }
       }
-      
-      const coveragePercent = ((opaquePixels / (width * height)) * 100).toFixed(1);
-      console.log(`[renk-degistir] Maske kapsam: ${coveragePercent}% (${opaquePixels} opak piksel / ${width}x${height})`);
-      
-      // Binary maskeyi Fal.ai storage'a yükle
-      const maskBuffer = await binaryMask.getBufferAsync(Jimp.MIME_PNG);
-      const maskArrayBuffer = maskBuffer.buffer.slice(maskBuffer.byteOffset, maskBuffer.byteOffset + maskBuffer.byteLength) as ArrayBuffer;
-      const maskBlob = new Blob([maskArrayBuffer], { type: "image/png" });
-      const maskFile = new File([maskBlob], "mask.png", { type: "image/png" });
-      processedMaskUrl = await fal.storage.upload(maskFile);
-      console.log("[renk-degistir] Binary maske fal storage'a yüklendi:", processedMaskUrl);
-    } catch (err) {
-      console.error("[renk-degistir] Maske oluşturulurken hata:", err);
-      // Hata olursa orijinal URL ile devam et (düzgün çalışmayabilir)
-    }
 
-    // 3. Fal.ai Inpainting İsteği
-    // PROMPT STRATEJİSİ: 
-    // - Obje/mobilya kelimesi KULLANMA (şekil bozulmasını önler)
-    // - Sadece yüzey malzemesi ve rengini tarif et
-    // - Kısa ve net ol (metin oluşmasını önler)
-    // - "no text" gibi negative ifadeler FLUX'ta çalışmaz, prompt'u sade tut
-    let prompt = "";
-    if (colorText && fabricText) {
-      prompt = `${colorText} ${fabricText} upholstery surface texture`;
-    } else if (colorText) {
-      prompt = `${colorText} fabric upholstery surface`;
-    } else if (fabricText) {
-      prompt = `${fabricText} upholstery surface texture`;
+      console.log(`[renk-degistir] ${changedPixels} piksel renk değiştirildi`);
+
+      // Sonucu fal.ai storage'a yükle
+      const buffer = await resultImage.getBufferAsync(Jimp.MIME_JPEG);
+      const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
+      const blob = new Blob([ab], { type: "image/jpeg" });
+      const file = new File([blob], "recolored.jpg", { type: "image/jpeg" });
+      const uploadedUrl = await fal.storage.upload(file);
+
+      console.log("[renk-degistir] Programatik renk değişimi tamamlandı:", uploadedUrl);
+      return NextResponse.json({ success: true, result_url: uploadedUrl });
+
     } else {
-      prompt = "same upholstery surface";
-    }
-    
-    console.log("[renk-degistir] Prompt:", prompt);
-    console.log("[renk-degistir] Fal.ai inpainting başlatılıyor...");
-    
-    const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
-      input: {
-        prompt,
-        image_url: job.result_url,
-        mask_url: processedMaskUrl,
-        output_format: "jpeg",
-        safety_tolerance: "6",
+      // ─── AI INPAINTING (Kumaş değişimi) ───
+      console.log("[renk-degistir] AI inpainting başlatılıyor (kumaş değişimi)...");
+
+      const Jimp = (await import("jimp")).default;
+      const cutoutImage = await Jimp.read(job.mask_url);
+      const width = cutoutImage.getWidth();
+      const height = cutoutImage.getHeight();
+
+      // Alpha kanalından binary maske oluştur
+      const binaryMask = new Jimp(width, height, 0x000000FF);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const pixel = Jimp.intToRGBA(cutoutImage.getPixelColor(x, y));
+          if (pixel.a > 10) {
+            binaryMask.setPixelColor(0xFFFFFFFF, x, y);
+          }
+        }
       }
-    });
-    
-    if (!result.data || !result.data.images || !result.data.images[0]) {
-       throw new Error("Fal.ai yanıtında görsel bulunamadı");
+
+      const maskBuffer = await binaryMask.getBufferAsync(Jimp.MIME_PNG);
+      const maskAB = maskBuffer.buffer.slice(maskBuffer.byteOffset, maskBuffer.byteOffset + maskBuffer.byteLength) as ArrayBuffer;
+      const maskBlob = new Blob([maskAB], { type: "image/png" });
+      const maskFile = new File([maskBlob], "mask.png", { type: "image/png" });
+      const processedMaskUrl = await fal.storage.upload(maskFile);
+
+      const colorText = colorPrompts[color] || "";
+      const fabricText = fabricPrompts[fabric] || "";
+      
+      let prompt = "";
+      if (colorText && fabricText) {
+        prompt = `${colorText} ${fabricText} upholstery surface texture`;
+      } else if (colorText) {
+        prompt = `${colorText} fabric upholstery surface`;
+      } else if (fabricText) {
+        prompt = `${fabricText} upholstery surface texture`;
+      } else {
+        prompt = "same upholstery surface";
+      }
+
+      console.log("[renk-degistir] Prompt:", prompt);
+      
+      const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
+        input: {
+          prompt,
+          image_url: job.result_url,
+          mask_url: processedMaskUrl,
+          output_format: "jpeg",
+          safety_tolerance: "6",
+        }
+      });
+
+      if (!result.data || !result.data.images || !result.data.images[0]) {
+        throw new Error("Fal.ai yanıtında görsel bulunamadı");
+      }
+
+      return NextResponse.json({
+        success: true,
+        result_url: result.data.images[0].url,
+      });
     }
-
-    const newImageUrl = result.data.images[0].url;
-
-    // (Opsiyonel) Yeni görseli de Supabase'e kaydedebiliriz, ancak frontend şimdilik
-    // state üzerinde tutacak. Veya ayrı bir "recolors" tablosuna kaydedilebilir.
-    
-    return NextResponse.json({
-      success: true,
-      result_url: newImageUrl
-    });
 
   } catch (err: any) {
     console.error("[renk-degistir] Hata:", err);
