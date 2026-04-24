@@ -57,14 +57,11 @@ export async function POST(req: NextRequest) {
     const prompt = `Furniture upholstery in ${colorText} ${fabricText}, photorealistic, same lighting and perspective, high quality texture detail`;
     
     console.log("[renk-degistir] Fal.ai inpainting başlatılıyor...");
-    const result = await fal.subscribe("fal-ai/flux-general/inpainting", {
+    const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
       input: {
         prompt,
         image_url: job.result_url,
         mask_url: job.mask_url,
-        strength: 0.85,
-        num_inference_steps: 20,
-        image_size: "square",
         output_format: "jpeg"
       }
     });
