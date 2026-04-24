@@ -54,57 +54,54 @@ export async function POST(req: NextRequest) {
     const colorText = colorPrompts[color] || "";
     const fabricText = fabricPrompts[fabric] || "";
     
-    // 2. Maskeyi indirip tersine çevirme (Jimp)
-    // Fal AI "White = Inpaint", "Black = Preserve" olarak çalışır.
-    // Bria maskesi: beyaz = ürün (foreground), siyah = arka plan.
-    // Fal AI fill: beyaz = değişecek alan, siyah = korunacak alan.
-    // Yani Bria maskesi zaten doğru yönde olabilir (beyaz = ürün = değişecek).
-    // Emin olmak için maskeyi analiz edip doğru yöne çeviriyoruz.
+    // 2. Bria cutout'unu binary maskeye çevirme
+    // ÖNEMLİ: Bria'dan gelen mask_url bir siyah-beyaz maske DEĞİL!
+    // Şeffaf arka planlı renkli PNG cutout (kesilmiş mobilya görseli).
+    // Fal AI fill ise binary maske istiyor:
+    //   - Beyaz = değişecek alan (inpaint)
+    //   - Siyah = korunacak alan (preserve)
+    // Bu yüzden alpha kanalından binary maske oluşturuyoruz:
+    //   - Alpha > 0 (opak, mobilya var) → Beyaz piksel
+    //   - Alpha = 0 (şeffaf, arka plan) → Siyah piksel
     let processedMaskUrl = job.mask_url;
     try {
-      console.log("[renk-degistir] Maske işleniyor...");
+      console.log("[renk-degistir] Bria cutout'undan binary maske oluşturuluyor...");
       const Jimp = (await import("jimp")).default;
-      const maskImage = await Jimp.read(job.mask_url);
+      const cutoutImage = await Jimp.read(job.mask_url);
       
-      // Maskenin beyaz/siyah oranını kontrol et
-      // Eğer beyaz alan çoğunlukta ise (>%60), maske tersine çevrilmeli
-      // Çünkü mobilya genellikle görüntünün küçük kısmını kaplar
-      const width = maskImage.getWidth();
-      const height = maskImage.getHeight();
-      let whitePixels = 0;
-      const totalPixels = width * height;
+      const width = cutoutImage.getWidth();
+      const height = cutoutImage.getHeight();
+      
+      // Orijinal görsel ile aynı boyutta yeni bir siyah-beyaz maske oluştur
+      const binaryMask = new Jimp(width, height, 0x000000FF); // Tamamen siyah (RGBA: 0,0,0,255)
+      
+      let opaquePixels = 0;
       
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          const pixel = Jimp.intToRGBA(maskImage.getPixelColor(x, y));
-          // Beyaz piksel sayısı (eşik: 128)
-          if (pixel.r > 128 && pixel.g > 128 && pixel.b > 128) {
-            whitePixels++;
+          const pixel = Jimp.intToRGBA(cutoutImage.getPixelColor(x, y));
+          
+          // Alpha > 10 ise bu piksel mobilyanın parçası (küçük threshold ile noise filtrele)
+          if (pixel.a > 10) {
+            binaryMask.setPixelColor(0xFFFFFFFF, x, y); // Beyaz piksel (RGBA: 255,255,255,255)
+            opaquePixels++;
           }
         }
       }
       
-      const whiteRatio = whitePixels / totalPixels;
-      console.log(`[renk-degistir] Maske beyaz oranı: ${(whiteRatio * 100).toFixed(1)}%`);
+      const coveragePercent = ((opaquePixels / (width * height)) * 100).toFixed(1);
+      console.log(`[renk-degistir] Maske kapsam: ${coveragePercent}% (${opaquePixels} opak piksel / ${width}x${height})`);
       
-      // Beyaz alan çoğunlukta ise ters çevir (arka plan beyaz demektir, ürün siyah)
-      if (whiteRatio > 0.6) {
-        console.log("[renk-degistir] Maske tersine çevriliyor (beyaz > %60)...");
-        maskImage.invert();
-      } else {
-        console.log("[renk-degistir] Maske doğru yönde, tersine çevirme gerekmez.");
-      }
-      
-      // İşlenmiş maskeyi Fal.ai storage'a yükle (base64 data URI yerine URL kullan)
-      const maskBuffer = await maskImage.getBufferAsync(Jimp.MIME_PNG);
+      // Binary maskeyi Fal.ai storage'a yükle
+      const maskBuffer = await binaryMask.getBufferAsync(Jimp.MIME_PNG);
       const maskArrayBuffer = maskBuffer.buffer.slice(maskBuffer.byteOffset, maskBuffer.byteOffset + maskBuffer.byteLength) as ArrayBuffer;
       const maskBlob = new Blob([maskArrayBuffer], { type: "image/png" });
       const maskFile = new File([maskBlob], "mask.png", { type: "image/png" });
       processedMaskUrl = await fal.storage.upload(maskFile);
-      console.log("[renk-degistir] Maske fal storage'a yüklendi:", processedMaskUrl);
+      console.log("[renk-degistir] Binary maske fal storage'a yüklendi:", processedMaskUrl);
     } catch (err) {
-      console.error("[renk-degistir] Maske işlenirken hata oluştu:", err);
-      // Hata olursa orijinal URL ile devam et
+      console.error("[renk-degistir] Maske oluşturulurken hata:", err);
+      // Hata olursa orijinal URL ile devam et (düzgün çalışmayabilir)
     }
 
     // 3. Fal.ai Inpainting İsteği
