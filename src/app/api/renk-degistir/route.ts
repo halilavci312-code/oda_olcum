@@ -118,7 +118,9 @@ export async function POST(req: NextRequest) {
     } else if (colorText) {
       prompt = `recolor the fabric to ${colorText} material, ${baseInstruction}`;
     } else if (fabricText) {
-      prompt = `recolor the fabric to ${fabricText} material, ${baseInstruction}`;
+      // Renk orijinal, sadece kumaş değişiyor.
+      // Yapay zekaya "rengi aynı tut" demezsek kafasına göre sarı/mavi bir renk atayabilir.
+      prompt = `change the fabric texture to ${fabricText}, BUT maintain the exact same original color of the furniture, ${baseInstruction}`;
     } else {
       prompt = `keep exact same material, ${baseInstruction}`;
     }
