@@ -188,10 +188,54 @@ export async function POST(req: NextRequest) {
       console.log("[renk-degistir] Kumaş değişimi tespit edildi. AI Inpainting başlatılıyor...");
       const processedMaskUrl = await createBinaryMask(job.mask_url);
       
-      const colorText = aiColorPrompts[color] || "original base color";
+      let colorText = aiColorPrompts[color] || "";
+
+      // Eğer renk "orijinal" seçilmişse, resmin orijinal rengini (RGB) tespit et
+      // Bu sayede AI kafasına göre sarı/yeşil uydurmaz!
+      if (color === "orijinal") {
+        try {
+          const Jimp = (await import("jimp")).default;
+          const [resImg, mskImg] = await Promise.all([
+            Jimp.read(job.result_url),
+            Jimp.read(job.mask_url),
+          ]);
+          
+          let rSum = 0, gSum = 0, bSum = 0, pxCount = 0;
+          const w = resImg.getWidth(), h = resImg.getHeight();
+          if (mskImg.getWidth() === w && mskImg.getHeight() === h) {
+            for (let y = 0; y < h; y += 4) { 
+              for (let x = 0; x < w; x += 4) {
+                const maskPx = Jimp.intToRGBA(mskImg.getPixelColor(x, y));
+                if (maskPx.a > 128) {
+                  const origPx = Jimp.intToRGBA(resImg.getPixelColor(x, y));
+                  // Orta tonları al (çok siyah veya çok beyazları dışla)
+                  const lum = getLum(origPx.r/255, origPx.g/255, origPx.b/255);
+                  if (lum > 0.15 && lum < 0.85) {
+                    rSum += origPx.r; gSum += origPx.g; bSum += origPx.b;
+                    pxCount++;
+                  }
+                }
+              }
+            }
+          }
+          if (pxCount > 0) {
+            const avgR = Math.round(rSum / pxCount);
+            const avgG = Math.round(gSum / pxCount);
+            const avgB = Math.round(bSum / pxCount);
+            colorText = `rgb(${avgR}, ${avgG}, ${avgB}) colored`;
+            console.log("[renk-degistir] Orijinal renk tespit edildi:", colorText);
+          } else {
+            colorText = "original base color";
+          }
+        } catch(e) {
+          console.warn("Renk tespiti yapılamadı:", e);
+          colorText = "original base color";
+        }
+      }
+
       const fabricText = aiFabricPrompts[fabric] || "";
       
-      // Çok sade ve net bir prompt, AI'ın kafasını karıştırıp iki renkli koltuk yapmasını engeller
+      // AI'ın kafasını karıştırıp iki renkli koltuk yapmasını engelleyen sade prompt
       const prompt = `a highly detailed solid ${colorText} ${fabricText} sofa`;
 
       console.log("[renk-degistir] Prompt:", prompt);
