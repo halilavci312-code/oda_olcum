@@ -151,17 +151,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, result_url: uploadedUrl });
     }
     // ═══════════════════════════════════════════════════════════
-    // KUMAŞ DEĞİŞİMİ -> CONTROLNET DEPTH + JIMP COMPOSITING
-    // ControlNet Depth ile koltuğun 3D yapısı korunarak kumaş üretilir.
+    // KUMAŞ DEĞİŞİMİ -> IMAGE-TO-IMAGE (DÜŞÜK STRENGTH) + COMPOSITING
+    // Düşük strength ile orijinal yapı korunarak kumaş dokusu eklenir.
     // Ardından Jimp ile sadece koltuk kesilip orijinal odaya yapıştırılır.
     // ═══════════════════════════════════════════════════════════
     else {
-      console.log("[renk-degistir] Kumaş değişimi tespit edildi. ControlNet Depth + Compositing başlatılıyor...");
+      console.log("[renk-degistir] Kumaş değişimi tespit edildi. Image-to-Image + Compositing başlatılıyor...");
       
       let colorText = aiColorPrompts[color] || "";
 
       // Eğer renk "orijinal" seçilmişse, resmin orijinal rengini (RGB) tespit et
-      // Bu sayede AI kafasına göre sarı/yeşil uydurmaz!
       const Jimp = (await import("jimp")).default;
       
       if (color === "orijinal") {
@@ -179,7 +178,6 @@ export async function POST(req: NextRequest) {
                 const maskPx = Jimp.intToRGBA(mskImg.getPixelColor(x, y));
                 if (maskPx.a > 128) {
                   const origPx = Jimp.intToRGBA(resImg.getPixelColor(x, y));
-                  // Orta tonları al (çok siyah veya çok beyazları dışla)
                   const lum = getLum(origPx.r/255, origPx.g/255, origPx.b/255);
                   if (lum > 0.15 && lum < 0.85) {
                     rSum += origPx.r; gSum += origPx.g; bSum += origPx.b;
@@ -205,34 +203,23 @@ export async function POST(req: NextRequest) {
       }
 
       const fabricText = aiFabricPrompts[fabric] || "";
-      
-      const prompt = `a highly detailed solid ${colorText} ${fabricText} sofa, photorealistic, studio lighting`;
+      const prompt = `a highly detailed solid ${colorText} ${fabricText} sofa, photorealistic`;
 
       console.log("[renk-degistir] Prompt:", prompt);
       
-      // ── ADIM 1: Orijinal resmin boyutlarını al ──
-      const origImage = await Jimp.read(job.result_url);
-      const origW = origImage.getWidth();
-      const origH = origImage.getHeight();
-      console.log(`[renk-degistir] Orijinal boyut: ${origW}x${origH}`);
-
-      // ── ADIM 2: ControlNet Depth ile yapı-korumalı kumaş üretimi ──
-      // flux-control-lora-depth → derinlik haritası otomatik çıkartılır
-      // ve AI bu 3D yapıya bağlı kalarak yeni kumaş dokusu üretir.
+      // ── ADIM 1: Image-to-Image ile yapı-korumalı kumaş üretimi ──
+      // Düşük strength (0.35) → orijinal yapı büyük ölçüde korunur,
+      // sadece yüzey dokusu (kumaş) değişir.
       let aiResultUrl: string;
       try {
-        console.log("[renk-degistir] Fal.ai çağrısı başlıyor...");
-        const result = await fal.subscribe("fal-ai/flux-control-lora-depth", {
+        const result = await fal.subscribe("fal-ai/flux/dev/image-to-image", {
           input: {
+            image_url: job.result_url,
             prompt,
-            control_lora_image_url: job.result_url,
-            control_lora_strength: 0.85,
-            preprocess_depth: true,
-            image_size: { width: origW, height: origH },
+            strength: 0.35,
             num_inference_steps: 28,
             guidance_scale: 3.5,
             output_format: "jpeg",
-            enable_safety_checker: false,
           }
         });
 
@@ -241,21 +228,23 @@ export async function POST(req: NextRequest) {
         }
         aiResultUrl = result.data.images[0].url;
       } catch (falErr: any) {
-        console.error("[renk-degistir] Fal.ai HATA detayları:", JSON.stringify(falErr, null, 2));
-        const msg = falErr?.body?.detail || falErr?.message || "Fal.ai kumaş üretimi başarısız";
+        console.error("[renk-degistir] Fal.ai HATA:", JSON.stringify(falErr, null, 2));
+        const msg = falErr?.body?.detail || falErr?.message || "Kumaş üretimi başarısız";
         return NextResponse.json({ error: msg }, { status: 500 });
       }
 
       console.log("[renk-degistir] AI sonucu alındı, compositing başlıyor...");
 
-      // ── ADIM 3: Jimp Compositing — AI sonucundan sadece koltuğu kes, orijinal odaya yapıştır ──
-      // Bu sayede arka plan %100 orijinal kalır.
-      const [aiImage, maskImage] = await Promise.all([
+      // ── ADIM 2: Jimp Compositing — Sadece koltuğu kes, orijinal odaya yapıştır ──
+      const [origImage, aiImage, maskImage] = await Promise.all([
+        Jimp.read(job.result_url),
         Jimp.read(aiResultUrl),
         Jimp.read(job.mask_url),
       ]);
 
-      // Boyutları orijinale eşitle
+      const origW = origImage.getWidth();
+      const origH = origImage.getHeight();
+
       if (aiImage.getWidth() !== origW || aiImage.getHeight() !== origH) {
         aiImage.resize(origW, origH);
       }
@@ -263,38 +252,28 @@ export async function POST(req: NextRequest) {
         maskImage.resize(origW, origH);
       }
 
-      // Maske ile compositing: maske alanı → AI pikseli, dışı → orijinal piksel
+      // Maske ile compositing: koltuk alanı → AI pikseli, dışı → orijinal
       for (let y = 0; y < origH; y++) {
         for (let x = 0; x < origW; x++) {
           const maskPixel = Jimp.intToRGBA(maskImage.getPixelColor(x, y));
-          
           if (maskPixel.a > 128) {
-            // Maske alanı (koltuk) → AI sonucunun pikselini kullan
-            // Kenar yumuşatma: alpha 128-255 arasında smooth blending
             const alphaNorm = Math.min(1, (maskPixel.a - 128) / 127);
-            
             if (alphaNorm >= 0.95) {
-              // Tam maske alanı → doğrudan AI pikseli
               origImage.setPixelColor(aiImage.getPixelColor(x, y), x, y);
             } else {
-              // Kenar bölgesi → AI ve orijinal pikseli blend et
               const aiPx = Jimp.intToRGBA(aiImage.getPixelColor(x, y));
               const origPx = Jimp.intToRGBA(origImage.getPixelColor(x, y));
-              
               const blendR = Math.round(origPx.r * (1 - alphaNorm) + aiPx.r * alphaNorm);
               const blendG = Math.round(origPx.g * (1 - alphaNorm) + aiPx.g * alphaNorm);
               const blendB = Math.round(origPx.b * (1 - alphaNorm) + aiPx.b * alphaNorm);
-              
               origImage.setPixelColor(Jimp.rgbaToInt(blendR, blendG, blendB, 255), x, y);
             }
           }
-          // maskPixel.a <= 128 → orijinal piksel dokunulmadan kalır (arka plan korunur)
         }
       }
 
       console.log("[renk-degistir] Compositing tamamlandı, yükleniyor...");
 
-      // Sonucu fal storage'a yükle
       const buffer = await origImage.getBufferAsync(Jimp.MIME_JPEG);
       const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
       const file = new File([new Blob([ab], { type: "image/jpeg" })], "fabric_result.jpg", { type: "image/jpeg" });
