@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { fal } from "@fal-ai/client";
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 // ─── Renk Hedefleri ───
 const colorTargets: Record<string, { r: number; g: number; b: number }> = {
@@ -219,25 +219,33 @@ export async function POST(req: NextRequest) {
       // ── ADIM 2: ControlNet Depth ile yapı-korumalı kumaş üretimi ──
       // flux-control-lora-depth → derinlik haritası otomatik çıkartılır
       // ve AI bu 3D yapıya bağlı kalarak yeni kumaş dokusu üretir.
-      const result = await fal.subscribe("fal-ai/flux-control-lora-depth", {
-        input: {
-          prompt,
-          control_lora_image_url: job.result_url,
-          control_lora_strength: 0.85,
-          preprocess_depth: true,
-          image_size: { width: origW, height: origH },
-          num_inference_steps: 28,
-          guidance_scale: 3.5,
-          output_format: "jpeg",
-          enable_safety_checker: false,
-        }
-      });
+      let aiResultUrl: string;
+      try {
+        console.log("[renk-degistir] Fal.ai çağrısı başlıyor...");
+        const result = await fal.subscribe("fal-ai/flux-control-lora-depth", {
+          input: {
+            prompt,
+            control_lora_image_url: job.result_url,
+            control_lora_strength: 0.85,
+            preprocess_depth: true,
+            image_size: { width: origW, height: origH },
+            num_inference_steps: 28,
+            guidance_scale: 3.5,
+            output_format: "jpeg",
+            enable_safety_checker: false,
+          }
+        });
 
-      if (!result.data?.images?.[0]) {
-        throw new Error("Fal.ai yanıtında görsel bulunamadı");
+        if (!result.data?.images?.[0]) {
+          throw new Error("Fal.ai yanıtında görsel bulunamadı");
+        }
+        aiResultUrl = result.data.images[0].url;
+      } catch (falErr: any) {
+        console.error("[renk-degistir] Fal.ai HATA detayları:", JSON.stringify(falErr, null, 2));
+        const msg = falErr?.body?.detail || falErr?.message || "Fal.ai kumaş üretimi başarısız";
+        return NextResponse.json({ error: msg }, { status: 500 });
       }
 
-      const aiResultUrl = result.data.images[0].url;
       console.log("[renk-degistir] AI sonucu alındı, compositing başlıyor...");
 
       // ── ADIM 3: Jimp Compositing — AI sonucundan sadece koltuğu kes, orijinal odaya yapıştır ──
@@ -299,9 +307,10 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (err: any) {
-    console.error("[renk-degistir] Hata:", err);
+    console.error("[renk-degistir] Genel Hata:", err?.message || err);
+    const errorMsg = typeof err?.message === "string" ? err.message : "Sunucu hatası";
     return NextResponse.json(
-      { error: err.message || "Sunucu hatası" },
+      { error: errorMsg },
       { status: 500 }
     );
   }
