@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { fal } from "@fal-ai/client";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 // ─── Renk Hedefleri ───
 const colorTargets: Record<string, { r: number; g: number; b: number }> = {
@@ -42,37 +42,7 @@ function recolorChannel(origLum: number, pivot: number, target: number) {
   }
 }
 
-// ─── Bria cutout'undan binary maske oluşturma (AI için) ───
-async function createBinaryMask(maskUrl: string) {
-  const Jimp = (await import("jimp")).default;
-  const cutoutImage = await Jimp.read(maskUrl);
-  const width = cutoutImage.getWidth();
-  const height = cutoutImage.getHeight();
 
-  const binaryMask = new Jimp(width, height, 0x000000FF);
-  
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const pixel = Jimp.intToRGBA(cutoutImage.getPixelColor(x, y));
-      if (pixel.a > 10) {
-        binaryMask.setPixelColor(0xFFFFFFFF, x, y);
-      }
-    }
-  }
-
-  const maskBuffer = await binaryMask.getBufferAsync(Jimp.MIME_PNG);
-  const maskAB = maskBuffer.buffer.slice(
-    maskBuffer.byteOffset,
-    maskBuffer.byteOffset + maskBuffer.byteLength
-  ) as ArrayBuffer;
-  const maskFile = new File(
-    [new Blob([maskAB], { type: "image/png" })],
-    "mask.png",
-    { type: "image/png" }
-  );
-  
-  return await fal.storage.upload(maskFile);
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -181,20 +151,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, result_url: uploadedUrl });
     }
     // ═══════════════════════════════════════════════════════════
-    // KUMAŞ DEĞİŞİMİ -> AI INPAINTING
-    // Kumaş dokusunun belirgin olması için mecburen AI kullanılır.
+    // KUMAŞ DEĞİŞİMİ -> CONTROLNET DEPTH + JIMP COMPOSITING
+    // ControlNet Depth ile koltuğun 3D yapısı korunarak kumaş üretilir.
+    // Ardından Jimp ile sadece koltuk kesilip orijinal odaya yapıştırılır.
     // ═══════════════════════════════════════════════════════════
     else {
-      console.log("[renk-degistir] Kumaş değişimi tespit edildi. AI Inpainting başlatılıyor...");
-      const processedMaskUrl = await createBinaryMask(job.mask_url);
+      console.log("[renk-degistir] Kumaş değişimi tespit edildi. ControlNet Depth + Compositing başlatılıyor...");
       
       let colorText = aiColorPrompts[color] || "";
 
       // Eğer renk "orijinal" seçilmişse, resmin orijinal rengini (RGB) tespit et
       // Bu sayede AI kafasına göre sarı/yeşil uydurmaz!
+      const Jimp = (await import("jimp")).default;
+      
       if (color === "orijinal") {
         try {
-          const Jimp = (await import("jimp")).default;
           const [resImg, mskImg] = await Promise.all([
             Jimp.read(job.result_url),
             Jimp.read(job.mask_url),
@@ -235,18 +206,37 @@ export async function POST(req: NextRequest) {
 
       const fabricText = aiFabricPrompts[fabric] || "";
       
-      // AI'ın kafasını karıştırıp iki renkli koltuk yapmasını engelleyen sade prompt
-      const prompt = `a highly detailed solid ${colorText} ${fabricText} sofa`;
+      const prompt = `a highly detailed solid ${colorText} ${fabricText} sofa, photorealistic, studio lighting`;
+      const negativePrompt = "blurry, distorted, deformed, low quality, text, watermark, two-tone, mismatched colors";
 
       console.log("[renk-degistir] Prompt:", prompt);
       
-      const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
+      // ── ADIM 1: Orijinal resmin boyutlarını al ──
+      const origImage = await Jimp.read(job.result_url);
+      const origW = origImage.getWidth();
+      const origH = origImage.getHeight();
+      console.log(`[renk-degistir] Orijinal boyut: ${origW}x${origH}`);
+
+      // ── ADIM 2: ControlNet Depth ile yapı-korumalı kumaş üretimi ──
+      // flux-general + control_loras[depth] → orijinal resmin derinlik haritası
+      // otomatik çıkartılır (preprocess: "depth") ve AI bu yapıya bağlı kalır.
+      const result = await fal.subscribe("fal-ai/flux-general", {
         input: {
           prompt,
-          image_url: job.result_url,
-          mask_url: processedMaskUrl,
+          negative_prompt: negativePrompt,
+          control_loras: [
+            {
+              path: "https://huggingface.co/jasperai/flash-depth-controlnet-v3/resolve/main/diffusion_pytorch_model.safetensors",
+              control_image_url: job.result_url,
+              preprocess: "depth",
+              scale: 0.85,
+            }
+          ],
+          image_size: { width: origW, height: origH },
+          num_inference_steps: 28,
+          guidance_scale: 3.5,
           output_format: "jpeg",
-          safety_tolerance: "6",
+          enable_safety_checker: false,
         }
       });
 
@@ -254,9 +244,64 @@ export async function POST(req: NextRequest) {
         throw new Error("Fal.ai yanıtında görsel bulunamadı");
       }
 
+      const aiResultUrl = result.data.images[0].url;
+      console.log("[renk-degistir] AI sonucu alındı, compositing başlıyor...");
+
+      // ── ADIM 3: Jimp Compositing — AI sonucundan sadece koltuğu kes, orijinal odaya yapıştır ──
+      // Bu sayede arka plan %100 orijinal kalır.
+      const [aiImage, maskImage] = await Promise.all([
+        Jimp.read(aiResultUrl),
+        Jimp.read(job.mask_url),
+      ]);
+
+      // Boyutları orijinale eşitle
+      if (aiImage.getWidth() !== origW || aiImage.getHeight() !== origH) {
+        aiImage.resize(origW, origH);
+      }
+      if (maskImage.getWidth() !== origW || maskImage.getHeight() !== origH) {
+        maskImage.resize(origW, origH);
+      }
+
+      // Maske ile compositing: maske alanı → AI pikseli, dışı → orijinal piksel
+      for (let y = 0; y < origH; y++) {
+        for (let x = 0; x < origW; x++) {
+          const maskPixel = Jimp.intToRGBA(maskImage.getPixelColor(x, y));
+          
+          if (maskPixel.a > 128) {
+            // Maske alanı (koltuk) → AI sonucunun pikselini kullan
+            // Kenar yumuşatma: alpha 128-255 arasında smooth blending
+            const alphaNorm = Math.min(1, (maskPixel.a - 128) / 127);
+            
+            if (alphaNorm >= 0.95) {
+              // Tam maske alanı → doğrudan AI pikseli
+              origImage.setPixelColor(aiImage.getPixelColor(x, y), x, y);
+            } else {
+              // Kenar bölgesi → AI ve orijinal pikseli blend et
+              const aiPx = Jimp.intToRGBA(aiImage.getPixelColor(x, y));
+              const origPx = Jimp.intToRGBA(origImage.getPixelColor(x, y));
+              
+              const blendR = Math.round(origPx.r * (1 - alphaNorm) + aiPx.r * alphaNorm);
+              const blendG = Math.round(origPx.g * (1 - alphaNorm) + aiPx.g * alphaNorm);
+              const blendB = Math.round(origPx.b * (1 - alphaNorm) + aiPx.b * alphaNorm);
+              
+              origImage.setPixelColor(Jimp.rgbaToInt(blendR, blendG, blendB, 255), x, y);
+            }
+          }
+          // maskPixel.a <= 128 → orijinal piksel dokunulmadan kalır (arka plan korunur)
+        }
+      }
+
+      console.log("[renk-degistir] Compositing tamamlandı, yükleniyor...");
+
+      // Sonucu fal storage'a yükle
+      const buffer = await origImage.getBufferAsync(Jimp.MIME_JPEG);
+      const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
+      const file = new File([new Blob([ab], { type: "image/jpeg" })], "fabric_result.jpg", { type: "image/jpeg" });
+      const uploadedUrl = await fal.storage.upload(file);
+
       return NextResponse.json({
         success: true,
-        result_url: result.data.images[0].url,
+        result_url: uploadedUrl,
       });
     }
 
