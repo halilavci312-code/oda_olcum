@@ -208,15 +208,14 @@ export async function POST(req: NextRequest) {
       console.log("[renk-degistir] Prompt:", prompt);
       
       // ── ADIM 1: Image-to-Image ile yapı-korumalı kumaş üretimi ──
-      // Düşük strength (0.35) → orijinal yapı büyük ölçüde korunur,
-      // sadece yüzey dokusu (kumaş) değişir.
+      // strength 0.55 → yapı korunur + renk ve kumaş dokusu belirgin olur
       let aiResultUrl: string;
       try {
         const result = await fal.subscribe("fal-ai/flux/dev/image-to-image", {
           input: {
             image_url: job.result_url,
             prompt,
-            strength: 0.35,
+            strength: 0.55,
             num_inference_steps: 28,
             guidance_scale: 3.5,
             output_format: "jpeg",
