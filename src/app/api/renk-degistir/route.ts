@@ -207,7 +207,6 @@ export async function POST(req: NextRequest) {
       const fabricText = aiFabricPrompts[fabric] || "";
       
       const prompt = `a highly detailed solid ${colorText} ${fabricText} sofa, photorealistic, studio lighting`;
-      const negativePrompt = "blurry, distorted, deformed, low quality, text, watermark, two-tone, mismatched colors";
 
       console.log("[renk-degistir] Prompt:", prompt);
       
@@ -218,20 +217,14 @@ export async function POST(req: NextRequest) {
       console.log(`[renk-degistir] Orijinal boyut: ${origW}x${origH}`);
 
       // ── ADIM 2: ControlNet Depth ile yapı-korumalı kumaş üretimi ──
-      // flux-general + control_loras[depth] → orijinal resmin derinlik haritası
-      // otomatik çıkartılır (preprocess: "depth") ve AI bu yapıya bağlı kalır.
-      const result = await fal.subscribe("fal-ai/flux-general", {
+      // flux-control-lora-depth → derinlik haritası otomatik çıkartılır
+      // ve AI bu 3D yapıya bağlı kalarak yeni kumaş dokusu üretir.
+      const result = await fal.subscribe("fal-ai/flux-control-lora-depth", {
         input: {
           prompt,
-          negative_prompt: negativePrompt,
-          control_loras: [
-            {
-              path: "https://huggingface.co/jasperai/flash-depth-controlnet-v3/resolve/main/diffusion_pytorch_model.safetensors",
-              control_image_url: job.result_url,
-              preprocess: "depth",
-              scale: 0.85,
-            }
-          ],
+          control_lora_image_url: job.result_url,
+          control_lora_strength: 0.85,
+          preprocess_depth: true,
           image_size: { width: origW, height: origH },
           num_inference_steps: 28,
           guidance_scale: 3.5,
