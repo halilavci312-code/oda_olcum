@@ -99,32 +99,12 @@ export async function POST(req: NextRequest) {
 
     // ═══════════════════════════════════════════════════════════════
     // KUMAŞ + RENK DEĞİŞİMİ: %100 PROGRAMATİK - YAPI KESİNLİKLE KORUNUR
-    // Kumaş: HSL manipülasyonu ile doku simülasyonu (blur, saturation, grain)
-    // Renk: Luminance mapping
+    // Kumaş: HSL manipülasyonu ile doku simülasyonu (saturation, grain, kontrast)
+    // Renk: Luminance mapping — BLUR YOK, BULANIKLIK YOK
     // ═══════════════════════════════════════════════════════════════
 
-    // Kumaş efekti için klon oluştur (blur vb. global efektler için)
-    let texturedImg = origImg.clone();
-
     if (hasFabricChange) {
-      console.log("[renk-degistir] Programatik kumaş efekti:", fabric);
-      switch (fabric) {
-        case "kadife":
-          texturedImg.blur(2);       // Yumuşak pile efekti
-          texturedImg.contrast(0.08); // Hafif zenginlik
-          break;
-        case "keten":
-          texturedImg.contrast(0.05); // Hafif kontrast
-          break;
-        case "deri":
-          texturedImg.blur(1);        // Pürüzsüz yüzey
-          texturedImg.contrast(0.18); // Keskin kontrast
-          break;
-        case "sonil":
-          texturedImg.blur(3);        // Peluş yumuşaklık
-          texturedImg.contrast(-0.05);// Yumuşak geçişler
-          break;
-      }
+      console.log("[renk-degistir] Programatik kumaş efekti (blur-free):", fabric);
     }
 
     // Per-pixel işlem: kumaş HSL efektleri + renk değişimi + mask compositing
@@ -135,10 +115,9 @@ export async function POST(req: NextRequest) {
 
         const alphaNorm = maskPx.a / 255;
         const origPx = Jimp.intToRGBA(origImg.getPixelColor(x, y));
-        const texPx = Jimp.intToRGBA(texturedImg.getPixelColor(x, y));
 
-        // Başlangıç: textured piksel (blur/contrast uygulanmış)
-        let r = texPx.r / 255, g = texPx.g / 255, b = texPx.b / 255;
+        // Başlangıç: orijinal piksel (bulanıklık yok)
+        let r = origPx.r / 255, g = origPx.g / 255, b = origPx.b / 255;
 
         if (hasFabricChange) {
           let [pH, pS, pL] = rgbToHsl(r, g, b);
