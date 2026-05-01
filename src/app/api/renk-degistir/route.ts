@@ -125,36 +125,25 @@ export async function POST(req: NextRequest) {
           switch (fabric) {
             case "kadife":
               // Kadife: zengin doygun renkler, ışık emen yumuşak yüzey
-              pS = Math.min(1, pS * 1.55);   // +55% doygunluk (belirgin zenginlik)
-              pL = pL * 0.88;                 // Belirgin karartma (kadife ışık emer)
-              // Kadife pile efekti: hafif parıltı varyasyonu
-              const velvetSheen = Math.sin(x * 0.8 + y * 1.2) * 0.025;
-              pL = Math.min(1, Math.max(0, pL + velvetSheen));
+              pS = Math.min(1, pS * 1.5);    // Belirgin doygunluk artışı
+              pL = pL * 0.87;                 // Karartma (kadife ışık emer)
               break;
             case "keten":
-              // Keten: doğal mat, belirgin dokuma paterni
-              pS = pS * 0.68;               // -32% doygunluk (belirgin doğal/mat)
-              pL = Math.min(1, pL * 1.07);   // Aydınlatma (keten açık renktir)
-              // Güçlü dokuma grain paterni
-              const grain = Math.sin(x * 5.7 + y * 0.3) * Math.cos(y * 4.3 + x * 0.2) * 0.06;
-              const crossWeave = Math.sin(x * 12 + y * 12) * 0.02;
-              pL = Math.min(1, Math.max(0, pL + grain + crossWeave));
+              // Keten: doğal mat, soluk, hafif görünüm
+              pS = pS * 0.65;                // Belirgin desatürasyon (mat/doğal)
+              pL = Math.min(1, pL * 1.08);    // Açık ton (keten hafiftir)
               break;
             case "deri":
-              // Deri: parlak, yüksek kontrastlı, pürüzsüz yüzey
-              if (pL > 0.5) pL = Math.min(1, pL * 1.18);   // Parlak alanlar çok parlak
-              else pL = pL * 0.85;                           // Koyu alanlar çok koyu
-              pS = Math.min(1, pS * 1.25);                   // Belirgin doygunluk
-              // Deri yüzey parlaklığı
-              const specular = Math.pow(Math.max(0, Math.sin(x * 0.3) * Math.cos(y * 0.3)), 3) * 0.04;
-              pL = Math.min(1, pL + specular);
+              // Deri: parlak, kontrastlı, pürüzsüz
+              if (pL > 0.5) pL = Math.min(1, pL * 1.15);
+              else pL = pL * 0.82;
+              pS = Math.min(1, pS * 1.3);     // Doygun, zengin deri rengi
               break;
             case "sonil":
               // Şönil: sıcak, yumuşak, peluş doku
-              pS = Math.min(1, pS * 1.2);   // Belirgin doygunluk
-              pH = (pH + 0.02) % 1;          // Belirgin sıcak ton kayması
-              pL = Math.min(1, pL * 1.04);   // Hafif aydınlatma
-              // Şönil iplik doku paterni
+              pS = Math.min(1, pS * 1.2);
+              pH = (pH + 0.02) % 1;
+              pL = Math.min(1, pL * 1.04);
               const yarnTex = Math.sin(x * 8 + y * 3) * Math.sin(y * 7 - x * 2) * 0.03;
               pL = Math.min(1, Math.max(0, pL + yarnTex));
               break;
