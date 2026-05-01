@@ -217,7 +217,9 @@ export default function GorselYerlestirmePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           oda_resim_url: odaResimUrl,
-          urun_resim_url: urunResimUrl
+          urun_resim_url: urunResimUrl,
+          color: selectedColor,
+          fabric: selectedFabric
         })
       });
 
@@ -268,28 +270,6 @@ export default function GorselYerlestirmePage() {
         setOriginalResultImage(finalImageUrl);
         setCurrentJobId(initData.job_id);
         toast.success("Fotoğraf başarıyla oluşturuldu!");
-
-        // Önceden renk/kumaş seçildiyse otomatik uygula
-        if (selectedColor !== "orijinal" || selectedFabric !== "orijinal") {
-          setIsRecoloring(true);
-          try {
-            const res = await fetch("/api/renk-degistir", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ job_id: initData.job_id, color: selectedColor, fabric: selectedFabric })
-            });
-            const data = await res.json();
-            if (res.ok && data.result_url) {
-              setResultImage(data.result_url);
-              setRecolorCache({ [`${selectedColor}_${selectedFabric}`]: data.result_url });
-              toast.success("Renk/kumaş tercihiniz uygulandı!");
-            }
-          } catch {
-            // Hata olursa orijinal görsel kalır
-          } finally {
-            setIsRecoloring(false);
-          }
-        }
       }
     } catch (err: any) {
       console.error(err);

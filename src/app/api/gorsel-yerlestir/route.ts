@@ -24,21 +24,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("[proxy] Gelen istek:", JSON.stringify(body));
 
-    const { oda_resim_url, urun_resim_url } = body;
+    const { oda_resim_url, urun_resim_url, color, fabric } = body;
 
     if (!oda_resim_url || !urun_resim_url) {
       return NextResponse.json({ error: "Oda veya Ürün görseli eksik" }, { status: 400 });
     }
 
-    // 1. Supabase'e Job oluştur (Sadece ana görseller, renk/kumaş yok)
+    // 1. Supabase'e Job oluştur
     const { data: job, error: insertError } = await supabase
       .from("generation_jobs")
       .insert({
         status: "processing",
         room_image: oda_resim_url,
         product_image: urun_resim_url,
-        color: null,
-        fabric: null,
+        color: color || null,
+        fabric: fabric || null,
         texture_prompt: null
       })
       .select("id")
@@ -52,7 +52,9 @@ export async function POST(req: NextRequest) {
     const n8nPayload = {
       job_id: job.id,
       oda_resim_url,
-      urun_resim_url
+      urun_resim_url,
+      color: color || "orijinal",
+      fabric: fabric || "orijinal"
     };
 
     console.log("[proxy] n8n payload:", JSON.stringify(n8nPayload));
