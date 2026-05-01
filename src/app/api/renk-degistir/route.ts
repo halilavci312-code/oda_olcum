@@ -151,29 +151,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, result_url: uploadedUrl });
     }
     // ═══════════════════════════════════════════════════════════
-    // KUMAŞ DEĞİŞİMİ -> IMAGE-TO-IMAGE (DÜŞÜK STRENGTH) + COMPOSITING
-    // Düşük strength ile orijinal yapı korunarak kumaş dokusu eklenir.
-    // Ardından Jimp ile sadece koltuk kesilip orijinal odaya yapıştırılır.
+    // KUMAŞ DEĞİŞİMİ -> INPAINTING (flux-pro/v1/fill)
+    // Mask tabanlı inpainting ile sadece mobilya alanı değişir,
+    // oda ve mobilya yapısı (şekil, gölge, perspektif) %100 korunur.
     // ═══════════════════════════════════════════════════════════
     else {
-      console.log("[renk-degistir] Kumaş değişimi tespit edildi. Image-to-Image + Compositing başlatılıyor...");
+      console.log("[renk-degistir] Kumaş değişimi tespit edildi. Inpainting (fill) başlatılıyor...");
       
-      let colorText = aiColorPrompts[color] || "";
-
-      // Eğer renk "orijinal" seçilmişse, resmin orijinal rengini (RGB) tespit et
       const Jimp = (await import("jimp")).default;
-      
+
+      // ── Renk metni oluştur ──
+      let colorText = aiColorPrompts[color] || "";
       if (color === "orijinal") {
         try {
           const [resImg, mskImg] = await Promise.all([
             Jimp.read(job.result_url),
             Jimp.read(job.mask_url),
           ]);
-          
           let rSum = 0, gSum = 0, bSum = 0, pxCount = 0;
           const w = resImg.getWidth(), h = resImg.getHeight();
           if (mskImg.getWidth() === w && mskImg.getHeight() === h) {
-            for (let y = 0; y < h; y += 4) { 
+            for (let y = 0; y < h; y += 4) {
               for (let x = 0; x < w; x += 4) {
                 const maskPx = Jimp.intToRGBA(mskImg.getPixelColor(x, y));
                 if (maskPx.a > 128) {
@@ -194,30 +192,66 @@ export async function POST(req: NextRequest) {
             colorText = `rgb(${avgR}, ${avgG}, ${avgB}) colored`;
             console.log("[renk-degistir] Orijinal renk tespit edildi:", colorText);
           } else {
-            colorText = "original base color";
+            colorText = "same original color";
           }
         } catch(e) {
           console.warn("Renk tespiti yapılamadı:", e);
-          colorText = "original base color";
+          colorText = "same original color";
         }
       }
 
-      const fabricText = aiFabricPrompts[fabric] || "";
-      const prompt = `a highly detailed solid ${colorText} ${fabricText} sofa, photorealistic`;
+      // ── Detaylı kumaş dokusu prompt'ları ──
+      const detailedFabricPrompts: Record<string, string> = {
+        kadife: "luxurious velvet upholstery with soft plush texture, visible velvet pile and light-catching sheen, subtle fabric folds with gentle shadows",
+        keten: "natural linen upholstery with visible woven texture and organic grain, slightly textured matte surface with natural fiber details",
+        deri: "premium genuine leather upholstery with smooth surface, subtle leather grain pattern, natural leather creases and gentle reflections",
+        sonil: "thick chenille upholstery with plush tufted texture, soft fuzzy surface with visible yarn loops, cozy fabric depth",
+      };
+      const fabricText = detailedFabricPrompts[fabric] || "";
 
-      console.log("[renk-degistir] Prompt:", prompt);
-      
-      // ── ADIM 1: Image-to-Image ile yapı-korumalı kumaş üretimi ──
-      // strength 0.55 → yapı korunur + renk ve kumaş dokusu belirgin olur
+      const prompt = `The exact same sofa with ${colorText} ${fabricText} material, maintaining identical shape, position, proportions, and shadows, photorealistic furniture photography, 8k detail`;
+
+      console.log("[renk-degistir] Inpainting Prompt:", prompt);
+
+      // ── ADIM 1: Alpha mask'ı binary siyah-beyaz mask'a dönüştür ──
+      // flux-pro/v1/fill modeli: beyaz = inpaint edilecek alan, siyah = korunacak alan
+      const cutoutImg = await Jimp.read(job.mask_url);
+      const resultImg = await Jimp.read(job.result_url);
+      const w = resultImg.getWidth();
+      const h = resultImg.getHeight();
+
+      // Binary mask oluştur (aynı boyutta)
+      const binaryMask = new Jimp(w, h, 0x000000FF); // siyah başlangıç (korunacak)
+      if (cutoutImg.getWidth() !== w || cutoutImg.getHeight() !== h) {
+        cutoutImg.resize(w, h);
+      }
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const px = Jimp.intToRGBA(cutoutImg.getPixelColor(x, y));
+          if (px.a > 128) {
+            // Mobilya alanı → beyaz (inpaint edilecek)
+            binaryMask.setPixelColor(Jimp.rgbaToInt(255, 255, 255, 255), x, y);
+          }
+        }
+      }
+
+      // Mask'ı Fal storage'a yükle
+      const maskBuffer = await binaryMask.getBufferAsync(Jimp.MIME_PNG);
+      const maskAb = maskBuffer.buffer.slice(maskBuffer.byteOffset, maskBuffer.byteOffset + maskBuffer.byteLength) as ArrayBuffer;
+      const maskFile = new File([new Blob([maskAb], { type: "image/png" })], "binary_mask.png", { type: "image/png" });
+      const binaryMaskUrl = await fal.storage.upload(maskFile);
+
+      console.log("[renk-degistir] Binary mask oluşturuldu ve yüklendi.");
+
+      // ── ADIM 2: flux-pro/v1/fill ile inpainting ──
       let aiResultUrl: string;
       try {
-        const result = await fal.subscribe("fal-ai/flux/dev/image-to-image", {
+        const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
           input: {
             image_url: job.result_url,
+            mask_url: binaryMaskUrl,
             prompt,
-            strength: 0.55,
-            num_inference_steps: 28,
-            guidance_scale: 3.5,
             output_format: "jpeg",
           }
         });
@@ -232,55 +266,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: msg }, { status: 500 });
       }
 
-      console.log("[renk-degistir] AI sonucu alındı, compositing başlıyor...");
-
-      // ── ADIM 2: Jimp Compositing — Sadece koltuğu kes, orijinal odaya yapıştır ──
-      const [origImage, aiImage, maskImage] = await Promise.all([
-        Jimp.read(job.result_url),
-        Jimp.read(aiResultUrl),
-        Jimp.read(job.mask_url),
-      ]);
-
-      const origW = origImage.getWidth();
-      const origH = origImage.getHeight();
-
-      if (aiImage.getWidth() !== origW || aiImage.getHeight() !== origH) {
-        aiImage.resize(origW, origH);
-      }
-      if (maskImage.getWidth() !== origW || maskImage.getHeight() !== origH) {
-        maskImage.resize(origW, origH);
-      }
-
-      // Maske ile compositing: koltuk alanı → AI pikseli, dışı → orijinal
-      for (let y = 0; y < origH; y++) {
-        for (let x = 0; x < origW; x++) {
-          const maskPixel = Jimp.intToRGBA(maskImage.getPixelColor(x, y));
-          if (maskPixel.a > 128) {
-            const alphaNorm = Math.min(1, (maskPixel.a - 128) / 127);
-            if (alphaNorm >= 0.95) {
-              origImage.setPixelColor(aiImage.getPixelColor(x, y), x, y);
-            } else {
-              const aiPx = Jimp.intToRGBA(aiImage.getPixelColor(x, y));
-              const origPx = Jimp.intToRGBA(origImage.getPixelColor(x, y));
-              const blendR = Math.round(origPx.r * (1 - alphaNorm) + aiPx.r * alphaNorm);
-              const blendG = Math.round(origPx.g * (1 - alphaNorm) + aiPx.g * alphaNorm);
-              const blendB = Math.round(origPx.b * (1 - alphaNorm) + aiPx.b * alphaNorm);
-              origImage.setPixelColor(Jimp.rgbaToInt(blendR, blendG, blendB, 255), x, y);
-            }
-          }
-        }
-      }
-
-      console.log("[renk-degistir] Compositing tamamlandı, yükleniyor...");
-
-      const buffer = await origImage.getBufferAsync(Jimp.MIME_JPEG);
-      const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
-      const file = new File([new Blob([ab], { type: "image/jpeg" })], "fabric_result.jpg", { type: "image/jpeg" });
-      const uploadedUrl = await fal.storage.upload(file);
+      console.log("[renk-degistir] Inpainting tamamlandı, yükleniyor...");
 
       return NextResponse.json({
         success: true,
-        result_url: uploadedUrl,
+        result_url: aiResultUrl,
       });
     }
 
