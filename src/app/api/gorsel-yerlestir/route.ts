@@ -30,6 +30,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Oda veya Ürün görseli eksik" }, { status: 400 });
     }
 
+    // Seçimlerden texture_prompt oluştur (n8n'in eski mantığıyla uyumlu çalışması için)
+    let texture_prompt = null;
+    const isOriginalColor = !color || color === "orijinal";
+    const isOriginalFabric = !fabric || fabric === "orijinal";
+
+    if (!isOriginalColor || !isOriginalFabric) {
+      // API dosyasının başındaki textureMap'i kullanarak İngilizce prompt'u oluştur
+      const colorText = !isOriginalColor && textureMap[color] ? textureMap[color] + " colored" : "";
+      const fabricText = !isOriginalFabric && textureMap[fabric] ? textureMap[fabric] : "";
+      
+      texture_prompt = [colorText, fabricText].filter(Boolean).join(", ");
+    }
+
     // 1. Supabase'e Job oluştur
     const { data: job, error: insertError } = await supabase
       .from("generation_jobs")
@@ -39,7 +52,7 @@ export async function POST(req: NextRequest) {
         product_image: urun_resim_url,
         color: color || null,
         fabric: fabric || null,
-        texture_prompt: null
+        texture_prompt: texture_prompt
       })
       .select("id")
       .single();
@@ -54,7 +67,8 @@ export async function POST(req: NextRequest) {
       oda_resim_url,
       urun_resim_url,
       color: color || "orijinal",
-      fabric: fabric || "orijinal"
+      fabric: fabric || "orijinal",
+      texture_prompt: texture_prompt
     };
 
     console.log("[proxy] n8n payload:", JSON.stringify(n8nPayload));
