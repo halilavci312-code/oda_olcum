@@ -15,6 +15,8 @@ type StoreState = {
   resultImage: string | null;
   currentJobId: string | null;
   originalResultImage: string | null;
+  uploadedRoomUrl: string | null;
+  uploadedProductUrl: string | null;
 };
 
 let globalState: StoreState = {
@@ -26,6 +28,8 @@ let globalState: StoreState = {
   resultImage: null,
   currentJobId: null,
   originalResultImage: null,
+  uploadedRoomUrl: null,
+  uploadedProductUrl: null,
 };
 
 let listeners: Array<() => void> = [];
@@ -45,7 +49,7 @@ const store = {
 
 export default function GorselYerlestirmePage() {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const { roomImage, productImage, roomPreview, productPreview, isLoading, resultImage, currentJobId, originalResultImage } = state;
+  const { roomImage, productImage, roomPreview, productPreview, isLoading, resultImage, currentJobId, originalResultImage, uploadedRoomUrl, uploadedProductUrl } = state;
 
   const setRoomImage = (file: File | null) => store.setState({ roomImage: file });
   const setProductImage = (file: File | null) => store.setState({ productImage: file });
@@ -55,6 +59,8 @@ export default function GorselYerlestirmePage() {
   const setResultImage = (s: string | null) => store.setState({ resultImage: s });
   const setCurrentJobId = (s: string | null) => store.setState({ currentJobId: s });
   const setOriginalResultImage = (s: string | null) => store.setState({ originalResultImage: s });
+  const setUploadedRoomUrl = (s: string | null) => store.setState({ uploadedRoomUrl: s });
+  const setUploadedProductUrl = (s: string | null) => store.setState({ uploadedProductUrl: s });
 
   const colors = [
     { id: "orijinal", name: "Orijinal", hex: "linear-gradient(135deg,#e5e7eb,#d1d5db)", border: "#9ca3af" },
@@ -98,17 +104,61 @@ export default function GorselYerlestirmePage() {
 
     setIsRecoloring(true);
     try {
-      const res = await fetch("/api/renk-degistir", {
+      if (!uploadedRoomUrl || !uploadedProductUrl) {
+        throw new Error("Orijinal görseller bulunamadı. Lütfen sayfayı yenileyip tekrar deneyin.");
+      }
+
+      // 1. Yeni İşlemi Başlat (n8n Webhook üzerinden)
+      const res = await fetch("/api/gorsel-yerlestir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ job_id: currentJobId, color, fabric })
+        body: JSON.stringify({
+          oda_resim_url: uploadedRoomUrl,
+          urun_resim_url: uploadedProductUrl,
+          color,
+          fabric
+        })
       });
-      const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error || "Renk değiştirme başarısız oldu");
+      if (!res.ok) throw new Error("İşlem başlatılamadı");
       
-      setResultImage(data.result_url);
-      setRecolorCache(prev => ({ ...prev, [cacheKey]: data.result_url }));
+      const initData = await res.json();
+      if (!initData.job_id) throw new Error("Job ID alınamadı!");
+
+      // 2. Polling Başlat (Supabase'den sonucu bekle)
+      let isCompleted = false;
+      let finalImageUrl = null;
+      let attempts = 0;
+      const maxAttempts = 40; // 120 saniye
+
+      while (!isCompleted && attempts < maxAttempts) {
+        await new Promise(r => setTimeout(r, 3000));
+        attempts++;
+
+        const { data: job, error: jobError } = await supabase
+          .from("generation_jobs")
+          .select("status, result_url, error_message")
+          .eq("id", initData.job_id)
+          .single();
+
+        if (jobError) continue;
+
+        if (job.status === "completed" && job.result_url) {
+          isCompleted = true;
+          finalImageUrl = job.result_url;
+        } else if (job.status === "failed") {
+          throw new Error(job.error_message || "Renk değiştirme işlemi başarısız oldu.");
+        }
+      }
+
+      if (!isCompleted || !finalImageUrl) {
+        throw new Error("İşlem zaman aşımına uğradı.");
+      }
+      
+      setResultImage(finalImageUrl);
+      setRecolorCache(prev => ({ ...prev, [cacheKey]: finalImageUrl }));
+      setCurrentJobId(initData.job_id);
+      toast.success("Renk/kumaş tercihiniz uygulandı!");
     } catch (err: any) {
       toast.error(err.message);
       // Hata olursa orijinale geri dönme seçeneği
@@ -210,6 +260,8 @@ export default function GorselYerlestirmePage() {
         uploadFile(roomImage),
         uploadFile(productImage)
       ]);
+      setUploadedRoomUrl(odaResimUrl);
+      setUploadedProductUrl(urunResimUrl);
 
       // 2. n8n Webhook'una Proxy Üzerinden İstek Gönder ve Job ID al (Asenkron)
       const response = await fetch("/api/gorsel-yerlestir", {
