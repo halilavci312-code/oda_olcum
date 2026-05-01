@@ -4,53 +4,25 @@ import { fal } from "@fal-ai/client";
 
 export const maxDuration = 60;
 
-const colorTargets: Record<string, { r: number; g: number; b: number }> = {
-  orijinal: { r: -1, g: -1, b: -1 },
-  bej: { r: 215 / 255, g: 195 / 255, b: 170 / 255 },
-  antrasit: { r: 40 / 255, g: 40 / 255, b: 42 / 255 },
-  kiremit: { r: 160 / 255, g: 70 / 255, b: 35 / 255 },
-  zumrut: { r: 15 / 255, g: 65 / 255, b: 40 / 255 },
+// ─── Renk prompt eşlemeleri ───
+const colorPrompts: Record<string, string> = {
+  bej: "beige cream colored",
+  antrasit: "dark charcoal anthracite grey colored",
+  kiremit: "terracotta taba brown colored",
+  zumrut: "deep emerald forest green colored",
+};
+
+// ─── Kumaş prompt eşlemeleri ───
+const fabricPrompts: Record<string, string> = {
+  kadife: "luxurious velvet upholstery with soft plush pile texture and light-catching sheen",
+  keten: "natural linen upholstery with visible woven fiber texture and matte organic surface",
+  deri: "premium genuine leather upholstery with smooth polished surface and subtle grain",
+  sonil: "thick chenille upholstery with plush tufted yarn texture and cozy soft surface",
 };
 
 function getLum(r: number, g: number, b: number) {
   return 0.299 * r + 0.587 * g + 0.114 * b;
 }
-
-function recolorChannel(origLum: number, pivot: number, target: number) {
-  if (origLum <= pivot) return target * (origLum / pivot);
-  const scale = (origLum - pivot) / (1 - pivot);
-  return target + (1 - target) * scale;
-}
-
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-    else if (max === g) h = ((b - r) / d + 2) / 6;
-    else h = ((r - g) / d + 4) / 6;
-  }
-  return [h, s, l];
-}
-
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  if (s === 0) return [l, l, l];
-  const hue2rgb = (p: number, q: number, t: number) => {
-    if (t < 0) t += 1; if (t > 1) t -= 1;
-    if (t < 1/6) return p + (q-p)*6*t;
-    if (t < 1/2) return q;
-    if (t < 2/3) return p + (q-p)*(2/3-t)*6;
-    return p;
-  };
-  const q = l < 0.5 ? l*(1+s) : l+s-l*s;
-  const p = 2*l - q;
-  return [hue2rgb(p,q,h+1/3), hue2rgb(p,q,h), hue2rgb(p,q,h-1/3)];
-}
-
-const clamp = (v: number) => Math.min(255, Math.max(0, Math.round(v)));
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,122 +36,104 @@ export async function POST(req: NextRequest) {
     if (!job.result_url || !job.mask_url)
       return NextResponse.json({ error: "Maske veya sonuç görseli henüz hazır değil." }, { status: 400 });
 
+    // Orijinal seçilmişse direkt döndür
     if (color === "orijinal" && fabric === "orijinal")
       return NextResponse.json({ success: true, result_url: job.result_url });
 
-    const hasFabricChange = fabric && fabric !== "orijinal";
-    const hasColorChange = color && color !== "orijinal";
-
     const Jimp = (await import("jimp")).default;
-    const [origImg, cutoutImg] = await Promise.all([
-      Jimp.read(job.result_url),
-      Jimp.read(job.mask_url),
-    ]);
-    const w = origImg.getWidth(), h = origImg.getHeight();
+
+    // ── Orijinal mobilya rengini tespit et (renk "orijinal" ise) ──
+    let colorText = colorPrompts[color] || "";
+    if (!colorText) {
+      // Renk orijinal veya bilinmeyen → mobilyanın gerçek rengini tespit et
+      try {
+        const [resImg, mskImg] = await Promise.all([
+          Jimp.read(job.result_url),
+          Jimp.read(job.mask_url),
+        ]);
+        const w = resImg.getWidth(), h = resImg.getHeight();
+        if (mskImg.getWidth() !== w || mskImg.getHeight() !== h) mskImg.resize(w, h);
+
+        let rSum = 0, gSum = 0, bSum = 0, cnt = 0;
+        for (let y = 0; y < h; y += 4) {
+          for (let x = 0; x < w; x += 4) {
+            const mp = Jimp.intToRGBA(mskImg.getPixelColor(x, y));
+            if (mp.a > 128) {
+              const px = Jimp.intToRGBA(resImg.getPixelColor(x, y));
+              const lum = getLum(px.r / 255, px.g / 255, px.b / 255);
+              if (lum > 0.1 && lum < 0.9) {
+                rSum += px.r; gSum += px.g; bSum += px.b; cnt++;
+              }
+            }
+          }
+        }
+        if (cnt > 0) {
+          const hex = `#${Math.round(rSum/cnt).toString(16).padStart(2,"0")}${Math.round(gSum/cnt).toString(16).padStart(2,"0")}${Math.round(bSum/cnt).toString(16).padStart(2,"0")}`;
+          colorText = `${hex} colored`;
+          console.log("[renk-degistir] Orijinal renk:", hex);
+        } else {
+          colorText = "same original color";
+        }
+      } catch {
+        colorText = "same original color";
+      }
+    }
+
+    // ── Kumaş metni ──
+    const fabricText = fabricPrompts[fabric] || "";
+
+    // ── Prompt oluştur ──
+    const prompt = fabricText
+      ? `${colorText} ${fabricText} sofa, exact same shape and proportions, photorealistic furniture, 8k`
+      : `${colorText} sofa, exact same shape position and proportions, photorealistic furniture, 8k`;
+
+    console.log("[renk-degistir] Prompt:", prompt);
+
+    // ── Binary mask oluştur (beyaz=değiştir, siyah=koru) ──
+    const cutoutImg = await Jimp.read(job.mask_url);
+    const resultImg = await Jimp.read(job.result_url);
+    const w = resultImg.getWidth(), h = resultImg.getHeight();
     if (cutoutImg.getWidth() !== w || cutoutImg.getHeight() !== h) cutoutImg.resize(w, h);
 
-    // Pivot hesapla (renk değişimi için)
-    let pivot = 0.7;
-    if (hasColorChange) {
-      let totalLum = 0, cnt = 0;
-      for (let y = 0; y < h; y += 2) {
-        for (let x = 0; x < w; x += 2) {
-          const cp = Jimp.intToRGBA(cutoutImg.getPixelColor(x, y));
-          if (cp.a > 128) {
-            const op = Jimp.intToRGBA(origImg.getPixelColor(x, y));
-            totalLum += getLum(op.r/255, op.g/255, op.b/255);
-            cnt++;
-          }
-        }
-      }
-      if (cnt > 0) pivot = totalLum / cnt;
-    }
-
-    const targetColor = hasColorChange ? colorTargets[color] : null;
-
-    // ═══════════════════════════════════════════════════════════════
-    // KUMAŞ + RENK DEĞİŞİMİ: %100 PROGRAMATİK - YAPI KESİNLİKLE KORUNUR
-    // Kumaş: HSL manipülasyonu ile doku simülasyonu (saturation, grain, kontrast)
-    // Renk: Luminance mapping — BLUR YOK, BULANIKLIK YOK
-    // ═══════════════════════════════════════════════════════════════
-
-    if (hasFabricChange) {
-      console.log("[renk-degistir] Programatik kumaş efekti (blur-free):", fabric);
-    }
-
-    // Per-pixel işlem: kumaş HSL efektleri + renk değişimi + mask compositing
+    const binaryMask = new Jimp(w, h, 0x000000FF);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        const maskPx = Jimp.intToRGBA(cutoutImg.getPixelColor(x, y));
-        if (maskPx.a <= 5) continue;
-
-        const alphaNorm = maskPx.a / 255;
-        const origPx = Jimp.intToRGBA(origImg.getPixelColor(x, y));
-
-        // Başlangıç: orijinal piksel (bulanıklık yok)
-        let r = origPx.r / 255, g = origPx.g / 255, b = origPx.b / 255;
-
-        if (hasFabricChange) {
-          let [pH, pS, pL] = rgbToHsl(r, g, b);
-
-          switch (fabric) {
-            case "kadife":
-              // Kadife: zengin doygun renkler, ışık emen yumuşak yüzey
-              pS = Math.min(1, pS * 1.5);    // Belirgin doygunluk artışı
-              pL = pL * 0.87;                 // Karartma (kadife ışık emer)
-              break;
-            case "keten":
-              // Keten: doğal mat, soluk, hafif görünüm
-              pS = pS * 0.65;                // Belirgin desatürasyon (mat/doğal)
-              pL = Math.min(1, pL * 1.08);    // Açık ton (keten hafiftir)
-              break;
-            case "deri":
-              // Deri: parlak, kontrastlı, pürüzsüz
-              if (pL > 0.5) pL = Math.min(1, pL * 1.15);
-              else pL = pL * 0.82;
-              pS = Math.min(1, pS * 1.3);     // Doygun, zengin deri rengi
-              break;
-            case "sonil":
-              // Şönil: sıcak, yumuşak, peluş doku
-              pS = Math.min(1, pS * 1.2);
-              pH = (pH + 0.02) % 1;
-              pL = Math.min(1, pL * 1.04);
-              const yarnTex = Math.sin(x * 8 + y * 3) * Math.sin(y * 7 - x * 2) * 0.03;
-              pL = Math.min(1, Math.max(0, pL + yarnTex));
-              break;
-          }
-
-          [r, g, b] = hslToRgb(pH, pS, pL);
+        if (Jimp.intToRGBA(cutoutImg.getPixelColor(x, y)).a > 128) {
+          binaryMask.setPixelColor(Jimp.rgbaToInt(255, 255, 255, 255), x, y);
         }
-
-        // Renk değişimi varsa luminance mapping uygula
-        if (targetColor) {
-          const lum = getLum(r, g, b);
-          r = Math.min(1, Math.max(0, recolorChannel(lum, pivot, targetColor.r)));
-          g = Math.min(1, Math.max(0, recolorChannel(lum, pivot, targetColor.g)));
-          b = Math.min(1, Math.max(0, recolorChannel(lum, pivot, targetColor.b)));
-        }
-
-        // Mask alpha ile yumuşak geçiş
-        const oR = origPx.r / 255, oG = origPx.g / 255, oB = origPx.b / 255;
-        const outR = oR * (1 - alphaNorm) + r * alphaNorm;
-        const outG = oG * (1 - alphaNorm) + g * alphaNorm;
-        const outB = oB * (1 - alphaNorm) + b * alphaNorm;
-
-        origImg.setPixelColor(Jimp.rgbaToInt(
-          clamp(outR * 255), clamp(outG * 255), clamp(outB * 255), origPx.a
-        ), x, y);
       }
     }
 
-    console.log("[renk-degistir] İşlem tamamlandı, yükleniyor...");
+    // Mask'ı yükle
+    const maskBuf = await binaryMask.getBufferAsync(Jimp.MIME_PNG);
+    const maskAb = maskBuf.buffer.slice(maskBuf.byteOffset, maskBuf.byteOffset + maskBuf.byteLength) as ArrayBuffer;
+    const maskFile = new File([new Blob([maskAb], { type: "image/png" })], "mask.png", { type: "image/png" });
+    const maskUrl = await fal.storage.upload(maskFile);
 
-    const buffer = await origImg.getBufferAsync(Jimp.MIME_JPEG);
-    const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
-    const file = new File([new Blob([ab], { type: "image/jpeg" })], "result.jpg", { type: "image/jpeg" });
-    const uploadedUrl = await fal.storage.upload(file);
+    // ── Fal AI Inpainting ──
+    console.log("[renk-degistir] Fal AI'ya istek gönderiliyor...");
+    let aiResultUrl: string;
+    try {
+      const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
+        input: {
+          image_url: job.result_url,
+          mask_url: maskUrl,
+          prompt,
+          output_format: "jpeg",
+        }
+      });
+      if (!result.data?.images?.[0]) throw new Error("Görsel bulunamadı");
+      aiResultUrl = result.data.images[0].url;
+    } catch (falErr: any) {
+      console.error("[renk-degistir] Fal.ai HATA:", JSON.stringify(falErr, null, 2));
+      return NextResponse.json(
+        { error: falErr?.body?.detail || falErr?.message || "AI işlemi başarısız" },
+        { status: 500 }
+      );
+    }
 
-    return NextResponse.json({ success: true, result_url: uploadedUrl });
+    console.log("[renk-degistir] Başarılı:", aiResultUrl);
+    return NextResponse.json({ success: true, result_url: aiResultUrl });
 
   } catch (err: any) {
     console.error("[renk-degistir] Genel Hata:", err?.message || err);
